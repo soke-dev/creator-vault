@@ -1,6 +1,6 @@
 # CreatorVault 🎨
 
-CreatorVault empowers creators to fund their projects through decentralized crowdfunding on camp network
+Welcome to Creator Vault, a powerful, token-gated vault for creators to fund, protect, and share their intellectual property — built entirely on the Camp Network using the Origin SDK.
 
 ## ✨ Features
 
