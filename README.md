@@ -1,6 +1,6 @@
 # CreatorVault 🎨
 
-CreatorVault empowers creators to fund their projects through decentralized crowdfunding with camp origin integration, NFT receipts, and exclusive content access.
+CreatorVault empowers creators to fund their projects through decentralized crowdfunding on camp network
 
 ## ✨ Features
 
