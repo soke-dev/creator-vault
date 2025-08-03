@@ -22,7 +22,7 @@ CreatorVault empowers creators to fund their projects through decentralized crow
 - **Contact Collection**: Optional supporter contact information for reward delivery
 
 ### 🎵 **Exclusive Access**
-- **Premium Content**: Audio and video access for supporters
+- **Premium Content**: Contents, Audio and video access for supporters
 - **Community Features**: Recent activity feed and supporter networking
 - **Dashboard Management**: Comprehensive creator and supporter dashboards
 
