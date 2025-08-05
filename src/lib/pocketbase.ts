@@ -99,35 +99,176 @@ export const campaignImageService = {
     try {
       console.log(`[PocketBase] Downloading image from URL: ${imageUrl}`);
       
-      // Add timeout to prevent hanging on broken URLs
+      // Validate URL first
+      if (!imageUrl || !imageUrl.startsWith('http')) {
+        console.error(`[PocketBase] Invalid image URL: ${imageUrl}`);
+        return null;
+      }
+
+      // For Camp Origin URLs that might have CORS issues, we need to handle them differently
+      const isCampOriginUrl = imageUrl.includes('camp-origin.s3.us-east-2.amazonaws.com');
+      console.log(`[PocketBase] Is Camp Origin URL: ${isCampOriginUrl}`);
+      
+      let response: Response;
+      
+      // Add timeout to prevent hanging
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+      const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 seconds
       
-      // Download the image
-      const response = await fetch(imageUrl, { 
-        signal: controller.signal,
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+      try {
+        if (isCampOriginUrl) {
+          // For Camp Origin URLs, try multiple strategies
+          console.log(`[PocketBase] Handling Camp Origin URL with multiple strategies...`);
+          
+          // Strategy 1: Try simple fetch first (sometimes works server-side)
+          try {
+            console.log(`[PocketBase] Strategy 1: Simple fetch...`);
+            response = await fetch(imageUrl, { 
+              signal: controller.signal,
+              headers: {
+                'User-Agent': 'Mozilla/5.0 (compatible; CreatorVault/1.0)',
+                'Accept': 'image/*',
+                'Accept-Encoding': 'gzip, deflate, br',
+                'Accept-Language': 'en-US,en;q=0.9',
+                'Cache-Control': 'no-cache',
+                'Pragma': 'no-cache',
+              }
+            });
+            
+            if (response.ok) {
+              console.log(`[PocketBase] Strategy 1 successful`);
+            } else {
+              throw new Error(`Simple fetch failed: ${response.status}`);
+            }
+          } catch (simpleError: any) {
+            console.log(`[PocketBase] Strategy 1 failed: ${simpleError.message}`);
+            
+            // Strategy 2: Try with no-cors mode
+            console.log(`[PocketBase] Strategy 2: No-CORS fetch...`);
+            try {
+              response = await fetch(imageUrl, { 
+                signal: controller.signal,
+                mode: 'no-cors',
+                headers: {
+                  'User-Agent': 'Mozilla/5.0 (compatible; CreatorVault/1.0)',
+                }
+              });
+              
+              console.log(`[PocketBase] Strategy 2 response type: ${response.type}`);
+            } catch (noCorsError: any) {
+              console.log(`[PocketBase] Strategy 2 failed: ${noCorsError.message}`);
+              
+              // Strategy 3: Try using our proxy API if we're client-side
+              if (typeof window !== 'undefined') {
+                console.log(`[PocketBase] Strategy 3: Using client-side proxy...`);
+                const proxyUrl = `/api/image-proxy?url=${encodeURIComponent(imageUrl)}`;
+                response = await fetch(proxyUrl, { 
+                  signal: controller.signal,
+                  headers: {
+                    'Accept': 'image/*,*/*;q=0.8',
+                  }
+                });
+              } else {
+                // Server-side: give up on this URL
+                throw new Error('All Camp Origin strategies failed server-side');
+              }
+            }
+          }
+        } else {
+          // For non-Camp Origin URLs, use standard fetch
+          console.log(`[PocketBase] Standard fetch for external URL...`);
+          response = await fetch(imageUrl, { 
+            signal: controller.signal,
+            headers: {
+              'User-Agent': 'Mozilla/5.0 (compatible; CreatorVault/1.0)',
+              'Accept': 'image/*,*/*;q=0.8',
+              'Cache-Control': 'no-cache'
+            }
+          });
         }
-      });
-      
-      clearTimeout(timeoutId);
-      
-      if (!response.ok) {
-        throw new Error(`Failed to download image: ${response.status} ${response.statusText}`);
+        
+        clearTimeout(timeoutId);
+        console.log(`[PocketBase] Fetch response: status=${response.status}, ok=${response.ok}, type=${response.type}`);
+        
+      } catch (fetchError: any) {
+        clearTimeout(timeoutId);
+        console.error(`[PocketBase] All fetch strategies failed:`, fetchError.message);
+        
+        // For Camp Origin URLs, if all fetch methods fail, try one more time with minimal config
+        if (isCampOriginUrl && fetchError.name !== 'AbortError') {
+          console.log(`[PocketBase] Trying minimal fetch as last resort...`);
+          try {
+            response = await fetch(imageUrl);
+            console.log(`[PocketBase] Minimal fetch successful: ${response.status}`);
+          } catch (minimalError: any) {
+            console.error(`[PocketBase] Even minimal fetch failed:`, minimalError.message);
+            return null;
+          }
+        } else {
+          return null;
+        }
       }
       
+      // Check if we got a valid response
+      if (!response.ok && response.type !== 'opaque') {
+        console.error(`[PocketBase] HTTP error: ${response.status} ${response.statusText}`);
+        
+        // For specific error codes, log more details
+        if (response.status === 403) {
+          console.error(`[PocketBase] 403 Forbidden - URL may be expired or access denied`);
+        } else if (response.status === 404) {
+          console.error(`[PocketBase] 404 Not Found - Image URL may be invalid`);
+        }
+        return null;
+      }
+      
+      // Get the blob
       const blob = await response.blob();
-      console.log(`[PocketBase] Downloaded blob size: ${blob.size} bytes, type: ${blob.type}`);
+      console.log(`[PocketBase] Downloaded blob: ${blob.size} bytes, type: ${blob.type}`);
       
-      // Create a File object from the blob
-      const file = new File([blob], filename, { 
-        type: blob.type || 'image/jpeg' // Default to jpeg if type is unknown
-      });
+      // Validate blob size
+      if (blob.size === 0) {
+        console.error(`[PocketBase] Downloaded file is empty`);
+        return null;
+      }
       
+      // For no-cors responses, we might not get the correct MIME type
+      let mimeType = blob.type;
+      let extension = 'jpg'; // default
+      
+      if (mimeType && mimeType !== 'application/octet-stream') {
+        // We have a proper MIME type
+        if (mimeType.includes('png')) extension = 'png';
+        else if (mimeType.includes('gif')) extension = 'gif';
+        else if (mimeType.includes('webp')) extension = 'webp';
+        else if (mimeType.includes('svg')) extension = 'svg';
+      } else {
+        // Fallback: try to determine from URL
+        console.log(`[PocketBase] No MIME type available, determining from URL...`);
+        const urlMatch = imageUrl.match(/\.(png|jpg|jpeg|gif|webp|svg)/i);
+        if (urlMatch) {
+          extension = urlMatch[1].toLowerCase();
+          mimeType = `image/${extension === 'jpg' ? 'jpeg' : extension}`;
+        } else {
+          // Default to JPEG if we can't determine
+          mimeType = 'image/jpeg';
+          extension = 'jpg';
+        }
+      }
+      
+      console.log(`[PocketBase] Determined file type: ${mimeType}, extension: ${extension}`);
+      
+      const finalFilename = `${filename}.${extension}`;
+      const file = new File([blob], finalFilename, { type: mimeType });
+      
+      console.log(`[PocketBase] ✅ Created file: ${file.name}, size: ${file.size} bytes, type: ${file.type}`);
       return file;
-    } catch (error) {
-      console.error('[PocketBase] Error downloading image from URL:', error);
+      
+    } catch (error: any) {
+      console.error(`[PocketBase] ❌ Error downloading image:`, error.message);
+      if (error.name === 'AbortError') {
+        console.error(`[PocketBase] Download timed out after 15 seconds`);
+      }
       return null;
     }
   },
@@ -135,7 +276,26 @@ export const campaignImageService = {
   // Create a new campaign image record with file upload
   async createWithImageFile(data: Omit<CampaignImage, 'id' | 'created' | 'updated'>, imageUrl?: string): Promise<CampaignImage> {
     try {
-      console.log(`[PocketBase] Creating campaign image record with file upload`);
+      console.log(`[PocketBase] Creating campaign image record for campaign: ${data.campaign_address}`);
+      console.log(`[PocketBase] Image URL: ${imageUrl}`);
+      console.log(`[PocketBase] Creator address: ${data.creator_address}`);
+      
+      // Validate required fields
+      if (!data.campaign_address) {
+        throw new Error('Campaign address is required');
+      }
+      if (!data.creator_address) {
+        throw new Error('Creator address is required');
+      }
+      
+      // Test PocketBase connection first
+      try {
+        await pb.health.check();
+        console.log(`[PocketBase] Connection test successful`);
+      } catch (healthError) {
+        console.error(`[PocketBase] Connection test failed:`, healthError);
+        throw new Error('PocketBase connection failed');
+      }
       
       // Prepare the form data for creating the record
       const formData = new FormData();
@@ -146,28 +306,65 @@ export const campaignImageService = {
         formData.append('original_nft_id', data.original_nft_id);
       }
       
-      // If we have an image URL, download and attach it as a file
+      // If we have an image URL, try to download and attach it as a file
       if (imageUrl) {
-        formData.append('image_url', imageUrl); // Keep original URL for reference
+        formData.append('image_url', imageUrl); // Always save the original URL for reference
         
-        const filename = `campaign_${data.campaign_address}_${Date.now()}.jpg`;
+        console.log(`[PocketBase] Attempting to download and store image file...`);
+        const filename = `campaign_${data.campaign_address.slice(-8)}_${Date.now()}`;
         const imageFile = await this.downloadImageAsFile(imageUrl, filename);
         
         if (imageFile) {
           formData.append('image_file', imageFile);
-          console.log(`[PocketBase] Attached image file: ${filename}, size: ${imageFile.size} bytes`);
+          console.log(`[PocketBase] Successfully attached image file: ${imageFile.name}, size: ${imageFile.size} bytes`);
         } else {
-          console.warn(`[PocketBase] Failed to download image from URL: ${imageUrl}`);
+          console.warn(`[PocketBase] Failed to download image file, but will save URL reference`);
+        }
+      } else {
+        console.warn(`[PocketBase] No image URL provided`);
+      }
+      
+      // Create the record with the file upload (or just the URL if file download failed)
+      console.log(`[PocketBase] Creating record in campaign_images collection...`);
+      const record = await pb.collection('campaign_images').create(formData);
+      console.log(`[PocketBase] Successfully created record:`, {
+        id: record.id,
+        campaign_address: record.campaign_address,
+        has_file: !!record.image_file,
+        has_url: !!record.image_url
+      });
+      
+      return record as unknown as CampaignImage;
+    } catch (error: any) {
+      console.error('[PocketBase] Error creating campaign image with file:', error);
+      
+      // Enhanced error logging
+      if (error.response) {
+        console.error('[PocketBase] Response error:', error.response);
+      }
+      if (error.status) {
+        console.error('[PocketBase] Status code:', error.status);
+      }
+      
+      // Try fallback: create record with just URL (no file)
+      if (imageUrl && error.message !== 'Campaign address is required' && error.message !== 'Creator address is required') {
+        try {
+          console.log(`[PocketBase] Attempting fallback: creating record with URL only...`);
+          const fallbackData = {
+            campaign_address: data.campaign_address,
+            image_url: imageUrl,
+            creator_address: data.creator_address,
+            original_nft_id: data.original_nft_id || ''
+          };
+          
+          const fallbackRecord = await pb.collection('campaign_images').create(fallbackData);
+          console.log(`[PocketBase] Fallback record created successfully:`, fallbackRecord.id);
+          return fallbackRecord as unknown as CampaignImage;
+        } catch (fallbackError) {
+          console.error('[PocketBase] Fallback creation also failed:', fallbackError);
         }
       }
       
-      // Create the record with the file upload
-      const record = await pb.collection('campaign_images').create(formData);
-      console.log(`[PocketBase] Created record with file:`, record);
-      
-      return record as unknown as CampaignImage;
-    } catch (error) {
-      console.error('Error creating campaign image with file:', error);
       throw error;
     }
   },
@@ -228,7 +425,13 @@ export const campaignImageService = {
       const requestPromise = pb.collection('campaign_images').getFirstListItem(`campaign_address="${campaignAddress}"`);
       
       const record = await Promise.race([requestPromise, timeoutPromise]) as unknown as CampaignImage;
-      console.log(`[PocketBase] Found record:`, record);
+      console.log(`[PocketBase] Found image record:`, {
+        id: record.id,
+        has_file: !!record.image_file,
+        has_url: !!record.image_url,
+        file_name: record.image_file || 'none',
+        url: record.image_url || 'none'
+      });
       
       // If we have a file stored in PocketBase, prefer that over external URLs
       if (record.image_file) {

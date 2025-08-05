@@ -181,8 +181,12 @@ export default function ExplorePage() {
 
                 console.log("Formatted campaigns:", formattedCampaigns);
                 
-                // Reverse to show newest campaigns first (latest to oldest)
-                setCampaigns(formattedCampaigns.reverse());
+                // Reorder to show first 3 campaigns created (oldest) first, then the rest
+                const first3Campaigns = formattedCampaigns.slice(0, 3);
+                const remainingCampaigns = formattedCampaigns.slice(3);
+                const reorderedCampaigns = [...first3Campaigns, ...remainingCampaigns];
+                
+                setCampaigns(reorderedCampaigns);
             } catch (error) {
                 console.error("Error fetching campaigns:", error);
             } finally {

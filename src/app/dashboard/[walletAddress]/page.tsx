@@ -34,6 +34,10 @@ export default function DashboardPage() {
     const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
     const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
     
+    // State for tracking wallet changes
+    const [previousWalletAddress, setPreviousWalletAddress] = useState<string | undefined>(undefined);
+    const [isWalletChanging, setIsWalletChanging] = useState<boolean>(false);
+    
     // State for campaign management features
     const [selectedCampaignForContacts, setSelectedCampaignForContacts] = useState<string>('');
     const [selectedCampaignForDonors, setSelectedCampaignForDonors] = useState<string>('');
@@ -64,9 +68,60 @@ export default function DashboardPage() {
     const [spotifyProfile, setSpotifyProfile] = useState<{ id?: string; displayName?: string } | null>(null);
     const [tiktokProfile, setTiktokProfile] = useState<{ id?: string; nickname?: string } | null>(null);
 
+    // Effect to detect wallet changes and clear social state
+    useEffect(() => {
+        const currentWalletAddress = account?.address;
+        
+        if (previousWalletAddress && currentWalletAddress && previousWalletAddress !== currentWalletAddress) {
+            console.log(`[Dashboard] Wallet changed from ${previousWalletAddress} to ${currentWalletAddress}. Clearing social state...`);
+            
+            // Set wallet changing flag
+            setIsWalletChanging(true);
+            
+            // Clear all social profile state
+            setTwitterProfile(null);
+            setSpotifyProfile(null);
+            setTiktokProfile(null);
+            
+            // Show notification to user
+            showSuccess(
+                "Wallet Changed", 
+                "Social verification has been reset for the new wallet. Please refresh if needed."
+            );
+            
+            // Reset the flag after a short delay
+            setTimeout(() => {
+                setIsWalletChanging(false);
+            }, 1000);
+        }
+        
+        // Update the previous wallet address
+        setPreviousWalletAddress(currentWalletAddress);
+    }, [account?.address, previousWalletAddress, showSuccess]);
+
+    // Manual refresh function for social verification
+    const refreshSocialVerification = () => {
+        console.log("[Dashboard] Manual refresh of social verification requested");
+        setTwitterProfile(null);
+        setSpotifyProfile(null);
+        setTiktokProfile(null);
+        setIsRefreshing(true);
+        
+        // Force a brief refresh state
+        setTimeout(() => {
+            setIsRefreshing(false);
+        }, 1000);
+        
+        showSuccess("Refreshed", "Social verification data has been refreshed.");
+    };
+
     useEffect(() => {
       const fetchTwitterProfile = async () => {
-        if (socials?.twitter && account?.address) {
+        // Skip fetching if we're in the middle of a wallet change or refresh
+        if (isWalletChanging || isRefreshing) return;
+        
+        // Only fetch if we have valid socials for the current wallet
+        if (socials?.twitter && account?.address && account?.address === previousWalletAddress) {
           const apiKey = process.env.NEXT_PUBLIC_CAMP_ORIGIN_API_KEY;
           if (!apiKey) {
             console.error('Camp Origin API key not found in environment variables');
@@ -81,11 +136,15 @@ export default function DashboardPage() {
         }
       };
       fetchTwitterProfile();
-    }, [socials?.twitter, account?.address]);
+    }, [socials?.twitter, account?.address, previousWalletAddress, isWalletChanging, isRefreshing]);
 
     useEffect(() => {
       const fetchSpotifyProfile = async () => {
-        if (socials?.spotify && account?.address) {
+        // Skip fetching if we're in the middle of a wallet change or refresh
+        if (isWalletChanging || isRefreshing) return;
+        
+        // Only fetch if we have valid socials for the current wallet
+        if (socials?.spotify && account?.address && account?.address === previousWalletAddress) {
           const apiKey = process.env.NEXT_PUBLIC_CAMP_ORIGIN_API_KEY;
           if (!apiKey) {
             console.error('Camp Origin API key not found in environment variables');
@@ -99,7 +158,7 @@ export default function DashboardPage() {
         }
       };
       fetchSpotifyProfile();
-    }, [socials?.spotify, account?.address]);
+    }, [socials?.spotify, account?.address, previousWalletAddress, isWalletChanging, isRefreshing]);
 
     // Function to fetch contact submissions for a specific campaign
     const fetchContactSubmissions = async (campaignAddress: string) => {
@@ -378,6 +437,12 @@ const CreateCampaignModal = ({ setIsModalOpen, refetch, isRefreshing, setIsRefre
     
     const { data: userSocials = {}, isLoading: userSocialsLoading } = useSocials() as { data: Socials; isLoading: boolean };
     const [twitterProfile, setTwitterProfile] = useState<{ userHandle?: string } | null>(null);
+
+    // Effect to clear modal's social state when account changes
+    useEffect(() => {
+        // Clear twitter profile when account changes to prevent stale data
+        setTwitterProfile(null);
+    }, [account?.address]);
 
     useEffect(() => {
         const fetchTwitterProfile = async () => {

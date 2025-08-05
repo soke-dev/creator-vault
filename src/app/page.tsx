@@ -57,8 +57,8 @@ export default function Home() {
     {/* Compact description for mobile */}
     <p className="text-sm sm:text-base md:text-lg lg:text-xl xl:text-2xl mb-3 sm:mb-4 text-gray-100 max-w-4xl mx-auto leading-relaxed font-light px-2">
       The next-generation Web3 platform empowering 
-      <span className="text-purple-300 font-semibold"> artists, musicians, authors, and innovators</span> to 
-      <span className="text-white font-semibold"> crowdfund their creative vision</span>
+      <span className="text-purple-300 font-semibold"> creators, artists, builders, authors, and innovators</span> to 
+      <span className="text-white font-semibold"> own & crowdfund their creative vision</span>
       <span className="block mt-1 sm:mt-2 text-xs sm:text-sm lg:text-lg text-gray-300">
         Powered by <span className="text-purple-300 font-semibold">Camp Network</span>
       </span>
@@ -218,12 +218,10 @@ export default function Home() {
 {/* Creative Projects Section */}
 <section className="py-2 sm:py-4 lg:py-6">
   <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-6 xl:px-8">
-    <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-4 lg:gap-6">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-4 lg:gap-6">
       {!isLoadingCampaigns && campaigns && campaigns.length > 0 ? (
         campaigns
-          .slice()
-          .reverse() // Show newest campaigns first
-          .slice(0, 6) // Show 6 campaigns (2 on mobile, 2 on tablet, 3 on desktop)
+          .slice(0, 3) // Show first 3 campaigns as featured campaigns
           .map((campaign) => (
             <CampaignCard
               key={campaign.campaignAddress}
@@ -371,7 +369,7 @@ export default function Home() {
                 </h3>
               </div>
               <p className="text-gray-400 text-xs sm:text-sm leading-relaxed max-w-md">
-                The next-generation Web3 platform empowering creators to bring their visions to life through blockchain-secured crowdfunding.
+                The next-generation Web3 platform empowering creators, artists, builders, authors, and innovators to own & crowdfund their creative vision.
               </p>
               <div className="flex items-center gap-2 sm:gap-4 mt-2 sm:mt-4">
                 <span className="text-xs text-gray-500">Powered by</span>
