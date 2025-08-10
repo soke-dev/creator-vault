@@ -9,7 +9,7 @@ library StdConstants {
     /// Calculated as `address(uint160(uint256(keccak256("hevm cheat code"))))`.
     Vm internal constant VM = Vm(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
     /// @dev console.sol and console2.sol work by executing a staticcall to this address.
-    /// Calculated as `address(uint160(uint88(bytes11("console.log"))))`.
+    /// Calculated as `address(uint160(uint88(bytes11("devLog"))))`.
     address internal constant CONSOLE = 0x000000000000000000636F6e736F6c652e6c6f67;
     /// @dev Used when deploying with create2.
     /// Taken from https://github.com/Arachnid/deterministic-deployment-proxy.

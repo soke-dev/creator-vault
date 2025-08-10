@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { isValidImageUrl, getProxiedImageUrl, testImageUrl } from '../utils/imageValidation';
+import { devLog } from '../utils/debugLog';
 
 interface UseImageStateReturn {
   imageUrl: string | null;
@@ -64,7 +65,7 @@ export function useImageState(
 
     // If direct access fails and proxy is enabled, try proxy
     if (fallbackToProxy) {
-      console.log(`[useImageState] Direct access failed, trying proxy for: ${url}`);
+      devLog(`[useImageState] Direct access failed, trying proxy for: ${url}`);
       const proxySuccess = await testAndSetImage(url, true);
       
       if (proxySuccess) {
@@ -75,7 +76,7 @@ export function useImageState(
 
     // If both fail and we can retry
     if (retry < maxRetries) {
-      console.log(`[useImageState] Retrying in ${retryDelay}ms... (attempt ${retry + 2})`);
+      devLog(`[useImageState] Retrying in ${retryDelay}ms... (attempt ${retry + 2})`);
       setTimeout(() => {
         loadImage(url, retry + 1);
       }, retryDelay);

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { campaignImageService } from '@/lib/pocketbase';
+import { devLog } from '@/utils/debugLog';
 
 // Simple in-memory cache to reduce PocketBase calls
 const cache = new Map<string, { data: any; timestamp: number; }>();
@@ -39,10 +40,10 @@ export async function GET(
   try {
     const campaignAddress = params.campaignAddress;
     
-    console.log(`[API] Fetching image for campaign: ${campaignAddress}`);
+    devLog(`[API] Fetching image for campaign: ${campaignAddress}`);
     
     if (!campaignAddress) {
-      console.log('[API] Error: Campaign address is missing');
+      devLog('[API] Error: Campaign address is missing');
       return NextResponse.json(
         { error: 'Campaign address is required' },
         { status: 400 }
@@ -52,13 +53,13 @@ export async function GET(
     // Check cache first
     const cached = cache.get(campaignAddress);
     if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
-      console.log(`[API] Returning cached result for campaign: ${campaignAddress}`);
+      devLog(`[API] Returning cached result for campaign: ${campaignAddress}`);
       return NextResponse.json(cached.data);
     }
 
     // Check rate limiting
     if (isRateLimited(campaignAddress)) {
-      console.log(`[API] Rate limited for campaign: ${campaignAddress}`);
+      devLog(`[API] Rate limited for campaign: ${campaignAddress}`);
       return NextResponse.json(
         { error: 'Rate limited. Please try again in a moment.', campaignAddress },
         { status: 429 }
@@ -68,7 +69,7 @@ export async function GET(
     const imageRecord = await campaignImageService.getByCampaignAddress(campaignAddress);
     
     if (!imageRecord) {
-      console.log(`[API] No image found for campaign: ${campaignAddress}`);
+      devLog(`[API] No image found for campaign: ${campaignAddress}`);
       const notFoundResponse = {
         error: 'No image found for this campaign', 
         campaignAddress,
@@ -84,7 +85,7 @@ export async function GET(
       return NextResponse.json(notFoundResponse, { status: 404 });
     }
 
-    console.log(`[API] Image found for campaign: ${campaignAddress}`);
+    devLog(`[API] Image found for campaign: ${campaignAddress}`);
     
     // Determine the best image URL to use
     let imageUrl = imageRecord.image_url;
@@ -93,7 +94,7 @@ export async function GET(
     if (imageRecord.image_file) {
       const fileUrl = campaignImageService.getFileUrl(imageRecord);
       if (fileUrl) {
-        console.log(`[API] Using PocketBase file URL: ${fileUrl}`);
+        devLog(`[API] Using PocketBase file URL: ${fileUrl}`);
         imageUrl = fileUrl;
       }
     }
@@ -101,7 +102,7 @@ export async function GET(
     // For AWS S3 URLs, check if they might be expired and suggest immediate proxy use
     let suggestProxy = false;
     if (imageUrl && imageUrl.includes('amazonaws.com')) {
-      console.log(`[API] AWS S3 URL detected - suggesting proxy to avoid expiration/CORS issues`);
+      devLog(`[API] AWS S3 URL detected - suggesting proxy to avoid expiration/CORS issues`);
       suggestProxy = true;
     }
     

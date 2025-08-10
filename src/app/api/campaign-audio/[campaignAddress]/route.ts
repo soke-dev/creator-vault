@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { campaignAudioService } from '@/lib/pocketbase';
+import { devLog } from '@/utils/debugLog';
 
 export async function GET(
   request: NextRequest,
@@ -15,7 +16,7 @@ export async function GET(
       );
     }
 
-    console.log(`[API] Fetching audio for campaign: ${campaignAddress}`);
+    devLog(`[API] Fetching audio for campaign: ${campaignAddress}`);
     
     // Fetch audio from PocketBase
     const audioRecord = await campaignAudioService.getByCampaignAddress(campaignAddress);

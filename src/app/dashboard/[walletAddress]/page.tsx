@@ -14,6 +14,7 @@ import { FaXTwitter } from "react-icons/fa6";
 import { TwitterAPI, SpotifyAPI, } from "@campnetwork/origin";
 import { useToast } from "@/components/Toast";
 import Image from 'next/image';
+import { devLog } from '@/utils/debugLog';
 
 // Add a type for socials
 type Socials = {
@@ -49,8 +50,6 @@ export default function DashboardPage() {
     // Fetch linked social accounts with type safety
     const { data: socials = {}, isLoading: socialsLoading } = useSocials() as { data: Socials; isLoading: boolean };
 
-    console.log("socials", socials);
-
     const contract = getContract({
         client: client,
         chain: chain,
@@ -73,8 +72,6 @@ export default function DashboardPage() {
         const currentWalletAddress = account?.address;
         
         if (previousWalletAddress && currentWalletAddress && previousWalletAddress !== currentWalletAddress) {
-            console.log(`[Dashboard] Wallet changed from ${previousWalletAddress} to ${currentWalletAddress}. Clearing social state...`);
-            
             // Set wallet changing flag
             setIsWalletChanging(true);
             
@@ -101,7 +98,6 @@ export default function DashboardPage() {
 
     // Manual refresh function for social verification
     const refreshSocialVerification = () => {
-        console.log("[Dashboard] Manual refresh of social verification requested");
         setTwitterProfile(null);
         setSpotifyProfile(null);
         setTiktokProfile(null);
@@ -182,11 +178,8 @@ export default function DashboardPage() {
         
         setLoadingDonors(true);
         try {
-            console.log(`[Dashboard] Fetching supporters for campaign: ${campaignAddress}`);
-            
             // Fetch supporter data from PocketBase campaign_supporters collection
             const supporterRecords = await campaignSupporterService.getByCampaign(campaignAddress);
-            console.log(`[Dashboard] Found ${supporterRecords.length} supporter records:`, supporterRecords);
 
             // Calculate total funded from supporter records
             const totalFundedAmount = supporterRecords.reduce((sum, supporter) => {
@@ -209,7 +202,6 @@ export default function DashboardPage() {
             donorData.sort((a, b) => new Date(b.fundedAt).getTime() - new Date(a.fundedAt).getTime());
 
             setCampaignDonors(donorData);
-            console.log(`[Dashboard] Processed ${donorData.length} supporters for display, total funded: $${totalFundedAmount}`);
         } catch (error) {
             console.error('Error fetching campaign supporters:', error);
             setCampaignDonors([]);
@@ -426,15 +418,6 @@ const CreateCampaignModal = ({ setIsModalOpen, refetch, isRefreshing, setIsRefre
     const [isLoadingVideos, setIsLoadingVideos] = useState<boolean>(false);
     const [showVideoSelector, setShowVideoSelector] = useState<boolean>(false);
     
-    // Debug selectedImage changes
-    useEffect(() => {
-        console.log("=== SELECTED IMAGE STATE CHANGED ===");
-        console.log("New selectedImage value:", selectedImage);
-        console.log("Type:", typeof selectedImage);
-        console.log("Length:", selectedImage?.length);
-        console.log("======================================");
-    }, [selectedImage]);
-    
     const { data: userSocials = {}, isLoading: userSocialsLoading } = useSocials() as { data: Socials; isLoading: boolean };
     const [twitterProfile, setTwitterProfile] = useState<{ userHandle?: string } | null>(null);
 
@@ -464,7 +447,7 @@ const CreateCampaignModal = ({ setIsModalOpen, refetch, isRefreshing, setIsRefre
 
     const fetchUserImages = async () => {
         if (!auth?.isAuthenticated) {
-            console.log("User not authenticated with Camp Origin");
+            devLog("User not authenticated with Camp Origin");
             return;
         }
         
@@ -472,14 +455,14 @@ const CreateCampaignModal = ({ setIsModalOpen, refetch, isRefreshing, setIsRefre
         try {
             // Use the Origin SDK to fetch user's uploads
             if (!auth.origin) {
-                console.log("Origin SDK not available");
+                devLog("Origin SDK not available");
                 setUserImages([]);
                 setShowImageSelector(true);
                 setIsLoadingImages(false);
                 return;
             }
             const uploads = await auth.origin.getOriginUploads();
-            console.log("User's Origin uploads:", uploads);
+            devLog("User's Origin uploads:", uploads);
             
             if (uploads && uploads.length > 0) {
                 // Transform the uploads data to match our expected format, filter for images only
@@ -505,7 +488,7 @@ const CreateCampaignModal = ({ setIsModalOpen, refetch, isRefreshing, setIsRefre
                 setUserImages(transformedImages);
                 setShowImageSelector(true);
             } else {
-                console.log("No image uploads found");
+                devLog("No image uploads found");
                 setUserImages([]);
                 setShowImageSelector(true);
             }
@@ -520,7 +503,7 @@ const CreateCampaignModal = ({ setIsModalOpen, refetch, isRefreshing, setIsRefre
 
     const fetchUserAudios = async () => {
         if (!auth?.isAuthenticated) {
-            console.log("User not authenticated with Camp Origin");
+            devLog("User not authenticated with Camp Origin");
             return;
         }
         
@@ -528,14 +511,14 @@ const CreateCampaignModal = ({ setIsModalOpen, refetch, isRefreshing, setIsRefre
         try {
             // Use the Origin SDK to fetch user's uploads
             if (!auth.origin) {
-                console.log("Origin SDK not available");
+                devLog("Origin SDK not available");
                 setUserAudios([]);
                 setShowAudioSelector(true);
                 setIsLoadingAudios(false);
                 return;
             }
             const uploads = await auth.origin.getOriginUploads();
-            console.log("User's Origin uploads for audio:", uploads);
+            devLog("User's Origin uploads for audio:", uploads);
             
             if (uploads && uploads.length > 0) {
                 // Transform the uploads data to match our expected format, filter for audio only
@@ -562,7 +545,7 @@ const CreateCampaignModal = ({ setIsModalOpen, refetch, isRefreshing, setIsRefre
                 setUserAudios(transformedAudios);
                 setShowAudioSelector(true);
             } else {
-                console.log("No audio uploads found");
+                devLog("No audio uploads found");
                 setUserAudios([]);
                 setShowAudioSelector(true);
             }
@@ -577,7 +560,7 @@ const CreateCampaignModal = ({ setIsModalOpen, refetch, isRefreshing, setIsRefre
 
     const fetchUserVideos = async () => {
         if (!auth?.isAuthenticated) {
-            console.log("User not authenticated with Camp Origin");
+            devLog("User not authenticated with Camp Origin");
             return;
         }
         
@@ -585,14 +568,14 @@ const CreateCampaignModal = ({ setIsModalOpen, refetch, isRefreshing, setIsRefre
         try {
             // Use the Origin SDK to fetch user's uploads
             if (!auth.origin) {
-                console.log("Origin SDK not available");
+                devLog("Origin SDK not available");
                 setUserVideos([]);
                 setShowVideoSelector(true);
                 setIsLoadingVideos(false);
                 return;
             }
             const uploads = await auth.origin.getOriginUploads();
-            console.log("User's Origin uploads for video:", uploads);
+            devLog("User's Origin uploads for video:", uploads);
             
             if (uploads && uploads.length > 0) {
                 // Transform the uploads data to match our expected format, filter for video only
@@ -622,7 +605,7 @@ const CreateCampaignModal = ({ setIsModalOpen, refetch, isRefreshing, setIsRefre
                 setUserVideos(transformedVideos);
                 setShowVideoSelector(true);
             } else {
-                console.log("No video uploads found");
+                devLog("No video uploads found");
                 setUserVideos([]);
                 setShowVideoSelector(true);
             }
@@ -638,14 +621,14 @@ const CreateCampaignModal = ({ setIsModalOpen, refetch, isRefreshing, setIsRefre
     const handleDeployContract = async () => {
         setIsDeployingContract(true);
         try {
-            console.log("=== CAMPAIGN CREATION DEBUG ===");
-            console.log("Creating campaign...");
-            console.log("Selected image:", selectedImage);
-            console.log("Selected image length:", selectedImage?.length);
-            console.log("Selected image type:", typeof selectedImage);
-            console.log("Account address:", account?.address);
-            console.log("User images array:", userImages);
-            console.log("=== END DEBUG INFO ===");
+            devLog("=== CAMPAIGN CREATION DEBUG ===");
+            devLog("Creating campaign...");
+            devLog("Selected image:", selectedImage);
+            devLog("Selected image length:", selectedImage?.length);
+            devLog("Selected image type:", typeof selectedImage);
+            devLog("Account address:", account?.address);
+            devLog("User images array:", userImages);
+            devLog("=== END DEBUG INFO ===");
             
             // Only include Twitter handle if user has verified Twitter connection AND we fetched the profile
             const descriptionWithTwitter = (userSocials?.twitter && twitterProfile?.userHandle) 
@@ -655,8 +638,8 @@ const CreateCampaignModal = ({ setIsModalOpen, refetch, isRefreshing, setIsRefre
             // Add category to description
             let fullDescription = `📂 Category: ${campaignCategory}\n\n${descriptionWithTwitter}`;
             
-                console.log("=== STARTING CONTRACT DEPLOYMENT ===");
-                console.log("Deployment parameters:", {
+                devLog("=== STARTING CONTRACT DEPLOYMENT ===");
+                devLog("Deployment parameters:", {
                     contractId: "Crowdfunding",
                     contractParams: [campaignName, fullDescription, campaignGoal, campaignDeadline],
                     publisher: "0x5BCC254Baa2e7974598a77404Ac4Ca51fd401A0d",
@@ -667,7 +650,7 @@ const CreateCampaignModal = ({ setIsModalOpen, refetch, isRefreshing, setIsRefre
                 
                 let contractAddress;
                 try {
-                    console.log("Attempting contract deployment...");
+                    devLog("Attempting contract deployment...");
                     
                     // Deploy the contract using Thirdweb's deployPublishedContract
                     const deployedContract = await deployPublishedContract({
@@ -685,8 +668,8 @@ const CreateCampaignModal = ({ setIsModalOpen, refetch, isRefreshing, setIsRefre
                         version: "1.0.6",
                     });
                     
-                    console.log("Deployed contract:", deployedContract);
-                    console.log("Deployed contract type:", typeof deployedContract);
+                    devLog("Deployed contract:", deployedContract);
+                    devLog("Deployed contract type:", typeof deployedContract);
                     
                     // Handle both string and object return types
                     if (typeof deployedContract === 'string') {
@@ -698,10 +681,10 @@ const CreateCampaignModal = ({ setIsModalOpen, refetch, isRefreshing, setIsRefre
                         contractAddress = deployedContract;
                     }
                     
-                    console.log("Contract address extracted:", contractAddress);
+                    devLog("Contract address extracted:", contractAddress);
                     
-                    console.log("Final extracted contractAddress:", contractAddress);
-                    console.log("=== CONTRACT DEPLOYMENT SUCCESSFUL ===");
+                    devLog("Final extracted contractAddress:", contractAddress);
+                    devLog("=== CONTRACT DEPLOYMENT SUCCESSFUL ===");
                 } catch (deployError: any) {
                     console.error("=== CONTRACT DEPLOYMENT FAILED ===");
                     console.error("Deployment error:", deployError);
@@ -709,20 +692,20 @@ const CreateCampaignModal = ({ setIsModalOpen, refetch, isRefreshing, setIsRefre
                     throw new Error(`Contract deployment failed: ${deployError.message || deployError}`);
                 }
 
-                console.log("Campaign deployed at:", contractAddress);
-                console.log("Contract address type:", typeof contractAddress);
+                devLog("Campaign deployed at:", contractAddress);
+                devLog("Contract address type:", typeof contractAddress);
                 
                 // Use the contract address directly
                 let contractAddressString: string;
                 
                 if (typeof contractAddress === 'string' && contractAddress.length > 0) {
                     contractAddressString = contractAddress;
-                    console.log("Using extracted contract address:", contractAddressString);
+                    devLog("Using extracted contract address:", contractAddressString);
                 } else {
                     // Since the contract deployment is successful but we can't extract the address,
                     // let's try to get it from the campaign factory after deployment
                     console.warn("Could not extract contract address from deployment result");
-                    console.log("Trying to get the latest campaign address from factory...");
+                    devLog("Trying to get the latest campaign address from factory...");
                     
                     try {
                         // Wait a moment for the transaction to be mined
@@ -741,13 +724,13 @@ const CreateCampaignModal = ({ setIsModalOpen, refetch, isRefreshing, setIsRefre
                             params: [account?.address as string],
                         });
                         
-                        console.log("User campaigns from factory:", userCampaigns);
+                        devLog("User campaigns from factory:", userCampaigns);
                         
                         if (userCampaigns && userCampaigns.length > 0) {
                             // Get the most recent campaign (last in array)
                             const latestCampaign = userCampaigns[userCampaigns.length - 1];
                             contractAddressString = latestCampaign.campaignAddress;
-                            console.log("Got latest campaign address from factory:", contractAddressString);
+                            devLog("Got latest campaign address from factory:", contractAddressString);
                         } else {
                             throw new Error("No campaigns found in factory");
                         }
@@ -755,14 +738,14 @@ const CreateCampaignModal = ({ setIsModalOpen, refetch, isRefreshing, setIsRefre
                         console.error("Failed to get address from factory:", factoryError);
                         
                         // As last resort, use dummy address as fallback
-                        console.log("Using dummy address as fallback for image storage...");
+                        devLog("Using dummy address as fallback for image storage...");
                         contractAddressString = "0x" + Date.now().toString(16) + Math.random().toString(16).substring(2, 18);
-                        console.log("Dummy contract address:", contractAddressString);
+                        devLog("Dummy contract address:", contractAddressString);
                     }
                 }
                 
-                console.log("Contract address string:", contractAddressString);
-                console.log("Contract address string type:", typeof contractAddressString);
+                devLog("Contract address string:", contractAddressString);
+                devLog("Contract address string type:", typeof contractAddressString);
                 
                 // Validate the contract address
                 if (!contractAddressString || contractAddressString === 'undefined') {
@@ -773,11 +756,11 @@ const CreateCampaignModal = ({ setIsModalOpen, refetch, isRefreshing, setIsRefre
                 // Store campaign image in PocketBase if one was selected
             if (selectedImage && account?.address) {
                 try {
-                    console.log("=== STORING IMAGE IN POCKETBASE ===");
-                    console.log("Storing campaign image in PocketBase...");
-                    console.log("Image URL to store:", selectedImage);
-                    console.log("Campaign address:", contractAddressString);
-                    console.log("Creator address:", account.address);
+                    devLog("=== STORING IMAGE IN POCKETBASE ===");
+                    devLog("Storing campaign image in PocketBase...");
+                    devLog("Image URL to store:", selectedImage);
+                    devLog("Campaign address:", contractAddressString);
+                    devLog("Creator address:", account.address);
                     
                     // Validate all required fields before creating record
                     if (!contractAddressString) {
@@ -791,7 +774,7 @@ const CreateCampaignModal = ({ setIsModalOpen, refetch, isRefreshing, setIsRefre
                     }
                     
                     const originalNFTId = userImages.find(img => img.url === selectedImage)?.tokenId;
-                    console.log("Original NFT ID:", originalNFTId);
+                    devLog("Original NFT ID:", originalNFTId);
                     
                     // Create the record data
                     const recordData = {
@@ -801,8 +784,8 @@ const CreateCampaignModal = ({ setIsModalOpen, refetch, isRefreshing, setIsRefre
                         original_nft_id: originalNFTId || ""
                     };
                     
-                    console.log("Record data to create:", recordData);
-                    console.log("Record data types:", {
+                    devLog("Record data to create:", recordData);
+                    devLog("Record data types:", {
                         campaign_address: typeof recordData.campaign_address,
                         image_url: typeof recordData.image_url,
                         creator_address: typeof recordData.creator_address,
@@ -810,8 +793,8 @@ const CreateCampaignModal = ({ setIsModalOpen, refetch, isRefreshing, setIsRefre
                     });
                     
                     const imageRecord = await campaignImageService.createWithImageFile(recordData, selectedImage);
-                    console.log("Campaign image stored in PocketBase:", imageRecord);
-                    console.log("=== IMAGE STORAGE SUCCESSFUL ===");
+                    devLog("Campaign image stored in PocketBase:", imageRecord);
+                    devLog("=== IMAGE STORAGE SUCCESSFUL ===");
                 } catch (error) {
                     console.error("=== IMAGE STORAGE FAILED ===");
                     console.error("Failed to store campaign image:", error);
@@ -832,23 +815,23 @@ const CreateCampaignModal = ({ setIsModalOpen, refetch, isRefreshing, setIsRefre
                     // Don't fail the entire campaign creation if image storage fails
                 }
             } else {
-                console.log("=== IMAGE STORAGE SKIPPED ===");
-                console.log("No image selected or account not available");
-                console.log("selectedImage:", selectedImage);
-                console.log("selectedImage truthy?", !!selectedImage);
-                console.log("account:", account?.address);
-                console.log("account truthy?", !!account?.address);
+                devLog("=== IMAGE STORAGE SKIPPED ===");
+                devLog("No image selected or account not available");
+                devLog("selectedImage:", selectedImage);
+                devLog("selectedImage truthy?", !!selectedImage);
+                devLog("account:", account?.address);
+                devLog("account truthy?", !!account?.address);
             }
             
             // Store campaign audio in PocketBase if one was selected (for music category)
             if (selectedAudio && account?.address && campaignCategory === 'music') {
                 try {
-                    console.log("=== STORING AUDIO IN POCKETBASE ===");
-                    console.log("Storing campaign audio in PocketBase...");
-                    console.log("Audio URL to store:", selectedAudio);
-                    console.log("Audio title:", selectedAudioTitle);
-                    console.log("Campaign address:", contractAddressString);
-                    console.log("Creator address:", account.address);
+                    devLog("=== STORING AUDIO IN POCKETBASE ===");
+                    devLog("Storing campaign audio in PocketBase...");
+                    devLog("Audio URL to store:", selectedAudio);
+                    devLog("Audio title:", selectedAudioTitle);
+                    devLog("Campaign address:", contractAddressString);
+                    devLog("Creator address:", account.address);
                     
                     // Validate all required fields before creating record
                     if (!contractAddressString) {
@@ -862,7 +845,7 @@ const CreateCampaignModal = ({ setIsModalOpen, refetch, isRefreshing, setIsRefre
                     }
                     
                     const originalAudioNFTId = userAudios.find(audio => audio.url === selectedAudio)?.tokenId;
-                    console.log("Original Audio NFT ID:", originalAudioNFTId);
+                    devLog("Original Audio NFT ID:", originalAudioNFTId);
                     
                     // Create the record data
                     const audioRecordData = {
@@ -874,11 +857,11 @@ const CreateCampaignModal = ({ setIsModalOpen, refetch, isRefreshing, setIsRefre
                         audio_duration: userAudios.find(audio => audio.url === selectedAudio)?.duration || 0
                     };
                     
-                    console.log("Audio record data to create:", audioRecordData);
+                    devLog("Audio record data to create:", audioRecordData);
                     
                     const audioRecord = await campaignAudioService.createWithAudioFile(audioRecordData, selectedAudio);
-                    console.log("Campaign audio stored in PocketBase:", audioRecord);
-                    console.log("=== AUDIO STORAGE SUCCESSFUL ===");
+                    devLog("Campaign audio stored in PocketBase:", audioRecord);
+                    devLog("=== AUDIO STORAGE SUCCESSFUL ===");
                 } catch (error) {
                     console.error("=== AUDIO STORAGE FAILED ===");
                     console.error("Failed to store campaign audio:", error);
@@ -899,22 +882,22 @@ const CreateCampaignModal = ({ setIsModalOpen, refetch, isRefreshing, setIsRefre
                     // Don't fail the entire campaign creation if audio storage fails
                 }
             } else {
-                console.log("=== AUDIO STORAGE SKIPPED ===");
-                console.log("No audio selected or not music category");
-                console.log("selectedAudio:", selectedAudio);
-                console.log("campaignCategory:", campaignCategory);
+                devLog("=== AUDIO STORAGE SKIPPED ===");
+                devLog("No audio selected or not music category");
+                devLog("selectedAudio:", selectedAudio);
+                devLog("campaignCategory:", campaignCategory);
             }
             
             // Store campaign video in PocketBase if one was selected (for film/video category)
             if (selectedVideo && account?.address && (campaignCategory === 'film' || campaignCategory === 'video')) {
                 try {
-                    console.log("=== STORING VIDEO IN POCKETBASE ===");
-                    console.log("Storing campaign video in PocketBase...");
-                    console.log("Video URL to store:", selectedVideo);
-                    console.log("Video title:", selectedVideoTitle);
-                    console.log("Video thumbnail:", selectedVideoThumbnail);
-                    console.log("Campaign address:", contractAddressString);
-                    console.log("Creator address:", account.address);
+                    devLog("=== STORING VIDEO IN POCKETBASE ===");
+                    devLog("Storing campaign video in PocketBase...");
+                    devLog("Video URL to store:", selectedVideo);
+                    devLog("Video title:", selectedVideoTitle);
+                    devLog("Video thumbnail:", selectedVideoThumbnail);
+                    devLog("Campaign address:", contractAddressString);
+                    devLog("Creator address:", account.address);
                     
                     // Validate all required fields before creating record
                     if (!contractAddressString) {
@@ -928,7 +911,7 @@ const CreateCampaignModal = ({ setIsModalOpen, refetch, isRefreshing, setIsRefre
                     }
                     
                     const originalVideoNFTId = userVideos.find(video => video.url === selectedVideo)?.tokenId;
-                    console.log("Original Video NFT ID:", originalVideoNFTId);
+                    devLog("Original Video NFT ID:", originalVideoNFTId);
                     
                     // Create the record data
                     const videoRecordData = {
@@ -940,11 +923,11 @@ const CreateCampaignModal = ({ setIsModalOpen, refetch, isRefreshing, setIsRefre
                         video_duration: userVideos.find(video => video.url === selectedVideo)?.duration || 0
                     };
                     
-                    console.log("Video record data to create:", videoRecordData);
+                    devLog("Video record data to create:", videoRecordData);
                     
                     const videoRecord = await campaignVideoService.createWithVideoFile(videoRecordData, selectedVideo, selectedVideoThumbnail);
-                    console.log("Campaign video stored in PocketBase:", videoRecord);
-                    console.log("=== VIDEO STORAGE SUCCESSFUL ===");
+                    devLog("Campaign video stored in PocketBase:", videoRecord);
+                    devLog("=== VIDEO STORAGE SUCCESSFUL ===");
                 } catch (error) {
                     console.error("=== VIDEO STORAGE FAILED ===");
                     console.error("Failed to store campaign video:", error);
@@ -965,10 +948,10 @@ const CreateCampaignModal = ({ setIsModalOpen, refetch, isRefreshing, setIsRefre
                     // Don't fail the entire campaign creation if video storage fails
                 }
             } else {
-                console.log("=== VIDEO STORAGE SKIPPED ===");
-                console.log("No video selected or not film/video category");
-                console.log("selectedVideo:", selectedVideo);
-                console.log("campaignCategory:", campaignCategory);
+                devLog("=== VIDEO STORAGE SKIPPED ===");
+                devLog("No video selected or not film/video category");
+                devLog("selectedVideo:", selectedVideo);
+                devLog("campaignCategory:", campaignCategory);
             }
             
             showSuccess(
@@ -1001,7 +984,7 @@ const CreateCampaignModal = ({ setIsModalOpen, refetch, isRefreshing, setIsRefre
             setIsRefreshing(true);
             setTimeout(() => {
                 refetch();
-                console.log("Dashboard refreshed - new campaign should now appear");
+                devLog("Dashboard refreshed - new campaign should now appear");
                 setIsRefreshing(false);
             }, 2000);
         }
@@ -1516,14 +1499,14 @@ const CreateCampaignModal = ({ setIsModalOpen, refetch, isRefreshing, setIsRefre
                                     <div 
                                         key={image.id || index}
                                         onClick={() => {
-                                            console.log("=== IMAGE SELECTION DEBUG ===");
-                                            console.log("Selecting image:", image.url);
-                                            console.log("Image object:", image);
-                                            console.log("Previous selectedImage:", selectedImage);
+                                            devLog("=== IMAGE SELECTION DEBUG ===");
+                                            devLog("Selecting image:", image.url);
+                                            devLog("Image object:", image);
+                                            devLog("Previous selectedImage:", selectedImage);
                                             setSelectedImage(image.url);
-                                            console.log("Image selected, closing selector...");
+                                            devLog("Image selected, closing selector...");
                                             setShowImageSelector(false);
-                                            console.log("=== END IMAGE SELECTION ===");
+                                            devLog("=== END IMAGE SELECTION ===");
                                         }}
                                         className="cursor-pointer border rounded-lg p-2 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors hover:border-purple-600 dark:hover:border-purple-500"
                                     >
@@ -1618,17 +1601,17 @@ const CreateCampaignModal = ({ setIsModalOpen, refetch, isRefreshing, setIsRefre
                                                 <div 
                                                     key={audio.id || index}
                                                     onClick={() => {
-                                                        console.log("=== AUDIO SELECTION DEBUG ===");
-                                                        console.log("Selecting audio:", audio.url);
-                                                        console.log("Audio object:", audio);
+                                                        devLog("=== AUDIO SELECTION DEBUG ===");
+                                                        devLog("Selecting audio:", audio.url);
+                                                        devLog("Audio object:", audio);
                                                         setSelectedAudio(audio.url);
                                                         // Use custom title if provided, otherwise use the original file name
                                                         if (!selectedAudioTitle.trim()) {
                                                             setSelectedAudioTitle(audio.name || `Audio ${index + 1}`);
                                                         }
-                                                        console.log("Audio selected, closing selector...");
+                                                        devLog("Audio selected, closing selector...");
                                                         setShowAudioSelector(false);
-                                                        console.log("=== END AUDIO SELECTION ===");
+                                                        devLog("=== END AUDIO SELECTION ===");
                                                     }}
                                                     className="cursor-pointer border rounded-lg p-4 hover:bg-purple-50 transition-colors hover:border-purple-600"
                                                 >
@@ -1747,18 +1730,18 @@ const CreateCampaignModal = ({ setIsModalOpen, refetch, isRefreshing, setIsRefre
                                                 <div 
                                                     key={video.id || index}
                                                     onClick={() => {
-                                                        console.log("=== VIDEO SELECTION DEBUG ===");
-                                                        console.log("Selecting video:", video.url);
-                                                        console.log("Video object:", video);
+                                                        devLog("=== VIDEO SELECTION DEBUG ===");
+                                                        devLog("Selecting video:", video.url);
+                                                        devLog("Video object:", video);
                                                         setSelectedVideo(video.url);
                                                         // Use custom title if provided, otherwise use the original file name
                                                         if (!selectedVideoTitle.trim()) {
                                                             setSelectedVideoTitle(video.name || `Video ${index + 1}`);
                                                         }
                                                         setSelectedVideoThumbnail(video.thumbnail || "");
-                                                        console.log("Video selected, closing selector...");
+                                                        devLog("Video selected, closing selector...");
                                                         setShowVideoSelector(false);
-                                                        console.log("=== END VIDEO SELECTION ===");
+                                                        devLog("=== END VIDEO SELECTION ===");
                                                     }}
                                                     className="cursor-pointer border rounded-lg p-4 hover:bg-blue-50 transition-colors hover:border-blue-600"
                                                 >
@@ -1869,7 +1852,7 @@ const CampaignNFTCollection = () => {
                             if (metadata.image) imageUrl = metadata.image;
                             if (metadata.name) campaignName = metadata.name;
                         } catch (e) {
-                            console.log('Could not parse NFT metadata for:', nft.id);
+                            devLog('Could not parse NFT metadata for:', nft.id);
                         }
                         
                         // Filter out funding receipts without proper images
@@ -1900,22 +1883,22 @@ const CampaignNFTCollection = () => {
                     }
                 }
                 
-                console.log(`Loaded ${nfts.length} NFTs from PocketBase`);
+                devLog(`Loaded ${nfts.length} NFTs from PocketBase`);
             } catch (error) {
-                console.log('Failed to load NFTs from database, falling back to localStorage:', error);
+                devLog('Failed to load NFTs from database, falling back to localStorage:', error);
             }
 
             // Load campaign images from campaigns the user has supported (funded)
             try {
-                console.log(`Loading supported campaign NFTs for user: ${account.address}`);
+                devLog(`Loading supported campaign NFTs for user: ${account.address}`);
                 
                 // Get funding records to find campaigns the user supported
                 const fundingRecords = await campaignFundingService.getBySupporter(account.address);
-                console.log(`Found ${fundingRecords.length} funding records`);
+                devLog(`Found ${fundingRecords.length} funding records`);
                 
                 // Get unique campaign addresses from funding records
                 const supportedCampaigns = [...new Set(fundingRecords.map(record => record.campaign_address))];
-                console.log(`User supported ${supportedCampaigns.length} unique campaigns`);
+                devLog(`User supported ${supportedCampaigns.length} unique campaigns`);
                 
                 // For each supported campaign, try to get its image
                 for (const campaignAddress of supportedCampaigns) {
@@ -1944,7 +1927,7 @@ const CampaignNFTCollection = () => {
                                 });
                                 campaignName = name;
                             } catch (error) {
-                                console.log(`Could not fetch campaign name for ${campaignAddress}`);
+                                devLog(`Could not fetch campaign name for ${campaignAddress}`);
                             }
                             
                             nfts.push({
@@ -1954,14 +1937,14 @@ const CampaignNFTCollection = () => {
                                 type: 'supported_campaign'
                             });
                             
-                            console.log(`Added supported campaign NFT: ${campaignName}`);
+                            devLog(`Added supported campaign NFT: ${campaignName}`);
                         }
                     } catch (error) {
-                        console.log(`Could not load image for supported campaign ${campaignAddress}:`, error);
+                        devLog(`Could not load image for supported campaign ${campaignAddress}:`, error);
                     }
                 }
             } catch (error) {
-                console.log('Failed to load supported campaign NFTs:', error);
+                devLog('Failed to load supported campaign NFTs:', error);
             }
             
             // Fallback: Load from localStorage for backwards compatibility
@@ -2350,7 +2333,7 @@ const CampaignDonorsSection = ({ campaigns }: { campaigns: any[] | undefined }) 
     // Export supporters data to CSV
     const exportSupportersData = (supporters: any[], campaignAddress: string) => {
         if (supporters.length === 0) {
-            console.log('No supporters data to export');
+            devLog('No supporters data to export');
             return;
         }
 
@@ -2401,7 +2384,7 @@ const CampaignDonorsSection = ({ campaigns }: { campaigns: any[] | undefined }) 
             link.click();
             document.body.removeChild(link);
             
-            console.log(`CSV export successful: ${filename}`);
+            devLog(`CSV export successful: ${filename}`);
         } catch (error) {
             console.error('CSV export failed:', error);
             alert('Failed to export CSV. Please try again.');
@@ -2413,7 +2396,7 @@ const CampaignDonorsSection = ({ campaigns }: { campaigns: any[] | undefined }) 
         try {
             await navigator.clipboard.writeText(text);
             // You could add a toast notification here if you have one
-            console.log('Copied to clipboard:', text);
+            devLog('Copied to clipboard:', text);
         } catch (err) {
             console.error('Failed to copy: ', err);
             // Fallback for older browsers
@@ -2424,7 +2407,7 @@ const CampaignDonorsSection = ({ campaigns }: { campaigns: any[] | undefined }) 
             textArea.select();
             try {
                 document.execCommand('copy');
-                console.log('Copied to clipboard (fallback):', text);
+                devLog('Copied to clipboard (fallback):', text);
             } catch (err) {
                 console.error('Fallback copy failed: ', err);
             }
@@ -2444,11 +2427,11 @@ const CampaignDonorsSection = ({ campaigns }: { campaigns: any[] | undefined }) 
     const loadCampaignDonors = async (campaignAddress: string) => {
         setIsLoading(true);
         try {
-            console.log(`[CampaignDonorsSection] Fetching supporters for campaign: ${campaignAddress}`);
+            devLog(`[CampaignDonorsSection] Fetching supporters for campaign: ${campaignAddress}`);
             
             // Fetch supporter data from PocketBase campaign_supporters collection
             const supporterRecords = await campaignSupporterService.getByCampaign(campaignAddress);
-            console.log(`[CampaignDonorsSection] Found ${supporterRecords.length} supporter records:`, supporterRecords);
+            devLog(`[CampaignDonorsSection] Found ${supporterRecords.length} supporter records:`, supporterRecords);
 
             // Calculate total funded from supporter records
             const totalFundedAmount = supporterRecords.reduce((sum, supporter) => {
@@ -2475,7 +2458,7 @@ const CampaignDonorsSection = ({ campaigns }: { campaigns: any[] | undefined }) 
             donorsData.sort((a, b) => new Date(b.fundedAt).getTime() - new Date(a.fundedAt).getTime());
 
             setCampaignDonors(donorsData);
-            console.log(`[CampaignDonorsSection] Processed ${donorsData.length} supporters for display, total funded: $${totalFundedAmount}`);
+            devLog(`[CampaignDonorsSection] Processed ${donorsData.length} supporters for display, total funded: $${totalFundedAmount}`);
         } catch (error) {
             console.error('Error loading campaign donors:', error);
             setCampaignDonors([]);

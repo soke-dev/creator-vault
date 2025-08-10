@@ -14,7 +14,7 @@ contract StdConstantsTest is Test {
     }
 
     function testConsoleDerivation() public pure {
-        assertEq(StdConstants.CONSOLE, address(uint160(uint88(bytes11("console.log")))));
+        assertEq(StdConstants.CONSOLE, address(uint160(uint88(bytes11("devLog")))));
     }
 
     function testDefaultSender() public view {

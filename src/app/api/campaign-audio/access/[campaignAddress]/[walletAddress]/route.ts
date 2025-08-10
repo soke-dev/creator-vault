@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { campaignSupporterService } from '@/lib/pocketbase';
+import { devLog } from '@/utils/debugLog';
 
 export async function GET(
   request: NextRequest,
@@ -15,7 +16,7 @@ export async function GET(
       );
     }
 
-    console.log(`[API] Checking audio access for campaign: ${campaignAddress}, wallet: ${walletAddress}`);
+    devLog(`[API] Checking audio access for campaign: ${campaignAddress}, wallet: ${walletAddress}`);
     
     // Check if user has access to campaign audio
     const hasAccess = await campaignSupporterService.hasAudioAccess(campaignAddress, walletAddress);
@@ -54,7 +55,7 @@ export async function POST(
       );
     }
 
-    console.log(`[API] Granting audio access for campaign: ${campaignAddress}, wallet: ${walletAddress}, amount: ${amountFunded}`);
+    devLog(`[API] Granting audio access for campaign: ${campaignAddress}, wallet: ${walletAddress}, amount: ${amountFunded}`);
     
     // Grant audio access to the supporter
     const supporterRecord = await campaignSupporterService.grantAudioAccess(

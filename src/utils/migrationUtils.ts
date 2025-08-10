@@ -1,4 +1,5 @@
 import { campaignImageService, pb } from '../lib/pocketbase';
+import { devLog } from './debugLog';
 
 /**
  * Migration utility to convert existing image URL records to file-based storage
@@ -7,11 +8,11 @@ import { campaignImageService, pb } from '../lib/pocketbase';
 
 export async function migrateExistingImages() {
   try {
-    console.log('[Migration] Starting migration of existing image URLs to files...');
+    devLog('[Migration] Starting migration of existing image URLs to files...');
     
     // Get all existing campaign image records
     const existingRecords = await campaignImageService.getAll();
-    console.log(`[Migration] Found ${existingRecords.length} existing records`);
+    devLog(`[Migration] Found ${existingRecords.length} existing records`);
     
     let migratedCount = 0;
     let errorCount = 0;
@@ -20,11 +21,11 @@ export async function migrateExistingImages() {
       try {
         // Skip if already has a file or no URL to migrate
         if (record.image_file || !record.image_url) {
-          console.log(`[Migration] Skipping record ${record.id} - already has file or no URL`);
+          devLog(`[Migration] Skipping record ${record.id} - already has file or no URL`);
           continue;
         }
         
-        console.log(`[Migration] Migrating record ${record.id} with URL: ${record.image_url.substring(0, 50)}...`);
+        devLog(`[Migration] Migrating record ${record.id} with URL: ${record.image_url.substring(0, 50)}...`);
         
         // Download the image as a file
         const filename = `migrated_${record.campaign_address}_${Date.now()}.jpg`;
@@ -38,7 +39,7 @@ export async function migrateExistingImages() {
           // Use PocketBase client directly for file update
           await pb.collection('campaign_images').update(record.id!, formData);
           
-          console.log(`[Migration] Successfully migrated record ${record.id}`);
+          devLog(`[Migration] Successfully migrated record ${record.id}`);
           migratedCount++;
         } else {
           console.error(`[Migration] Failed to download file for record ${record.id}`);
@@ -54,7 +55,7 @@ export async function migrateExistingImages() {
       }
     }
     
-    console.log(`[Migration] Migration complete. Migrated: ${migratedCount}, Errors: ${errorCount}`);
+    devLog(`[Migration] Migration complete. Migrated: ${migratedCount}, Errors: ${errorCount}`);
     return { migratedCount, errorCount };
     
   } catch (error) {
@@ -75,7 +76,7 @@ export async function runMigrationApi() {
     }
     
     const result = await response.json();
-    console.log('[Migration] API migration result:', result);
+    devLog('[Migration] API migration result:', result);
     return result;
   } catch (error) {
     console.error('[Migration] API migration error:', error);

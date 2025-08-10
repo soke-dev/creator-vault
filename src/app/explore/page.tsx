@@ -9,6 +9,7 @@ import { readContract } from "thirdweb";
 import { CampaignCard } from "../../components/CampaignCard";
 import { useTheme } from '../../contexts/ThemeContext';
 import { CROWDFUNDING_FACTORY } from '../constants/contracts';
+import { devLog } from '@/utils/debugLog';
 
 const chain = defineChain(123420001114);
 
@@ -34,7 +35,6 @@ export default function ExplorePage() {
         const fetchCampaigns = async () => {
             try {
                 setIsLoading(true);
-                console.log("Fetching campaigns from contract:", contract.address);
                 
                 // Get all campaigns using the same method as the main page
                 const allCampaigns = await readContract({
@@ -43,10 +43,7 @@ export default function ExplorePage() {
                     params: []
                 });
 
-                console.log("Fetched campaigns:", allCampaigns);
-
                 if (!allCampaigns || allCampaigns.length === 0) {
-                    console.log("No campaigns found");
                     setCampaigns([]);
                     return;
                 }
@@ -179,8 +176,6 @@ export default function ExplorePage() {
 
                 const formattedCampaigns = await Promise.all(campaignDetailsPromises);
 
-                console.log("Formatted campaigns:", formattedCampaigns);
-                
                 // Reorder to show first 3 campaigns created (oldest) first, then the rest
                 const first3Campaigns = formattedCampaigns.slice(0, 3);
                 const remainingCampaigns = formattedCampaigns.slice(3);

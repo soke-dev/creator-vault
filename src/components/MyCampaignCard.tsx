@@ -6,6 +6,7 @@ import { useReadContract } from "thirdweb/react";
 import { useState, useEffect, useCallback } from "react";
 import Image from 'next/image';
 import { campaignImageService } from '../lib/pocketbase';
+import { devLog } from '@/utils/debugLog';
 
 
 type MyCampaignCardProps = {
@@ -40,41 +41,41 @@ export const MyCampaignCard: React.FC<MyCampaignCardProps> = ({ contractAddress 
     // Fetch campaign image from API route (bypasses CORS) with retry logic
     const fetchCampaignImageFromDB = useCallback(async (retryCount = 0) => {
         try {
-            console.log(`[MyCampaignCard] Fetching image for campaign: ${contractAddress} (attempt ${retryCount + 1})`);
+            devLog(`[MyCampaignCard] Fetching image for campaign: ${contractAddress} (attempt ${retryCount + 1})`);
             
             const response = await fetch(`/api/campaign-image/${contractAddress}`, {
                 cache: 'force-cache', // Use cache when available
             });
             
-            console.log(`[MyCampaignCard] Response status: ${response.status}`);
+            devLog(`[MyCampaignCard] Response status: ${response.status}`);
             
             if (response.ok) {
                 const data = await response.json();
-                console.log(`[MyCampaignCard] Response data:`, data);
+                devLog(`[MyCampaignCard] Response data:`, data);
                 
                 if (data.success && data.data?.image_url) {
-                    console.log(`[MyCampaignCard] Setting image URL: ${data.data.image_url}`);
+                    devLog(`[MyCampaignCard] Setting image URL: ${data.data.image_url}`);
                     setCampaignImage(data.data.image_url);
                     return true;
                 }
             } else if (response.status === 404) {
                 // Don't retry 404s - no image exists
-                console.log(`[MyCampaignCard] No image exists for campaign: ${contractAddress}`);
+                devLog(`[MyCampaignCard] No image exists for campaign: ${contractAddress}`);
                 return false;
             } else if (response.status === 429) {
                 // Rate limited - wait longer before retry
                 if (retryCount < 1) {
-                    console.log(`[MyCampaignCard] Rate limited, retrying in 5 seconds... (attempt ${retryCount + 2})`);
+                    devLog(`[MyCampaignCard] Rate limited, retrying in 5 seconds... (attempt ${retryCount + 2})`);
                     setTimeout(() => fetchCampaignImageFromDB(retryCount + 1), 5000);
                     return false;
                 }
             } else {
                 const errorData = await response.json();
-                console.log(`[MyCampaignCard] API error:`, errorData);
+                devLog(`[MyCampaignCard] API error:`, errorData);
                 
                 // Retry logic for 5xx errors only
                 if (response.status >= 500 && retryCount < 1) {
-                    console.log(`[MyCampaignCard] Server error, retrying in 3 seconds... (attempt ${retryCount + 2})`);
+                    devLog(`[MyCampaignCard] Server error, retrying in 3 seconds... (attempt ${retryCount + 2})`);
                     setTimeout(() => fetchCampaignImageFromDB(retryCount + 1), 3000);
                     return false;
                 }
@@ -84,44 +85,44 @@ export const MyCampaignCard: React.FC<MyCampaignCardProps> = ({ contractAddress 
             
             // Retry on network errors (reduced retry count)
             if (retryCount < 1) {
-                console.log(`[MyCampaignCard] Network error, retrying in 3 seconds... (attempt ${retryCount + 2})`);
+                devLog(`[MyCampaignCard] Network error, retrying in 3 seconds... (attempt ${retryCount + 2})`);
                 setTimeout(() => fetchCampaignImageFromDB(retryCount + 1), 3000);
                 return false;
             }
         }
         
-        console.log(`[MyCampaignCard] No image found for campaign: ${contractAddress}`);
+        devLog(`[MyCampaignCard] No image found for campaign: ${contractAddress}`);
         return false;
     }, [contractAddress]);
 
     // Load campaign image with improved fallback logic
     useEffect(() => {
         const loadImage = async () => {
-            console.log(`[MyCampaignCard] Loading image for campaign: ${contractAddress}`);
+            devLog(`[MyCampaignCard] Loading image for campaign: ${contractAddress}`);
             
             // First try PocketBase database
             const dbSuccess = await fetchCampaignImageFromDB();
             
             if (!dbSuccess && !campaignImage) {
-                console.log(`[MyCampaignCard] Database fetch failed, trying localStorage fallback`);
+                devLog(`[MyCampaignCard] Database fetch failed, trying localStorage fallback`);
                 
                 // Fallback to localStorage (for backwards compatibility)
                 const imageKey = `campaign_image_${contractAddress}`;
                 const storedImage = localStorage.getItem(imageKey);
                 
                 if (storedImage) {
-                    console.log(`[MyCampaignCard] Found stored image: ${storedImage}`);
+                    devLog(`[MyCampaignCard] Found stored image: ${storedImage}`);
                     setCampaignImage(storedImage);
                 } else if (description) {
-                    console.log(`[MyCampaignCard] Trying to extract image from description`);
+                    devLog(`[MyCampaignCard] Trying to extract image from description`);
                     
                     // Extract image URL from description as last resort
                     const imageMatch = description.match(/🖼️ Image: (https?:\/\/[^\s\n]+)/);
                     if (imageMatch) {
-                        console.log(`[MyCampaignCard] Found image in description: ${imageMatch[1]}`);
+                        devLog(`[MyCampaignCard] Found image in description: ${imageMatch[1]}`);
                         setCampaignImage(imageMatch[1]);
                     } else {
-                        console.log(`[MyCampaignCard] No image found anywhere for campaign: ${contractAddress}`);
+                        devLog(`[MyCampaignCard] No image found anywhere for campaign: ${contractAddress}`);
                     }
                 }
             }

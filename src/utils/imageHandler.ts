@@ -1,4 +1,5 @@
 // Image handling utilities for campaign images including PocketBase file URLs
+import { devLog } from './debugLog';
 
 export const getProxiedImageUrl = (originalUrl: string): string => {
   if (!originalUrl) return '';
@@ -42,14 +43,14 @@ export const isExpiredS3Url = (url: string): boolean => {
 export const getOptimalImageUrl = (imageUrl: string | null, fileUrl: string | null): string | null => {
   // Priority 1: Use PocketBase file URL (never expires, no CORS issues)
   if (fileUrl && isPocketBaseFileUrl(fileUrl)) {
-    console.log('[ImageHandler] Using PocketBase file URL:', fileUrl);
+    devLog('[ImageHandler] Using PocketBase file URL:', fileUrl);
     return fileUrl;
   }
   
   // Priority 2: Use external URL with proxy if needed
   if (imageUrl) {
     if (imageUrl.includes('amazonaws.com')) {
-      console.log('[ImageHandler] S3 URL detected, using proxy:', imageUrl);
+      devLog('[ImageHandler] S3 URL detected, using proxy:', imageUrl);
       return getProxiedImageUrl(imageUrl);
     }
     return imageUrl;

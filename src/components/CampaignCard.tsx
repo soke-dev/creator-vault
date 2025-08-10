@@ -8,6 +8,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import Image from 'next/image';
 import { campaignImageService } from '../lib/pocketbase';
 import { getProxiedImageUrl, getOptimalImageUrl } from '../utils/imageHandler';
+import { devLog } from '@/utils/debugLog';
 
 type CampaignCardProps = {
     campaignAddress: string;
@@ -43,12 +44,12 @@ export const CampaignCard: React.FC<CampaignCardProps> = ({ campaignAddress }) =
     const fetchCampaignImage = useCallback(async () => {
         // Only prevent if already loaded successfully
         if (imageLoaded && campaignImage && !imageError) {
-            console.log(`[CampaignCard] Image already loaded for: ${campaignAddress}`);
+            devLog(`[CampaignCard] Image already loaded for: ${campaignAddress}`);
             return;
         }
 
         try {
-            console.log(`[CampaignCard] Fetching image for campaign: ${campaignAddress}`);
+            devLog(`[CampaignCard] Fetching image for campaign: ${campaignAddress}`);
             setImageLoading(true);
             setImageError(false);
             
@@ -67,7 +68,7 @@ export const CampaignCard: React.FC<CampaignCardProps> = ({ campaignAddress }) =
                     const optimalUrl = getOptimalImageUrl(data.data.image_url, data.data.file_url);
                     
                     if (optimalUrl) {
-                        console.log(`[CampaignCard] Using optimal image URL: ${optimalUrl}`);
+                        devLog(`[CampaignCard] Using optimal image URL: ${optimalUrl}`);
                         setCampaignImage(optimalUrl);
                         setImageLoaded(true);
                         setImageLoading(false);
@@ -81,7 +82,7 @@ export const CampaignCard: React.FC<CampaignCardProps> = ({ campaignAddress }) =
             const storedImage = localStorage.getItem(localKey);
             
             if (storedImage) {
-                console.log(`[CampaignCard] Using stored image: ${storedImage}`);
+                devLog(`[CampaignCard] Using stored image: ${storedImage}`);
                 let imageUrl = storedImage;
                 
                 // Apply same proxy logic for stored URLs
@@ -119,7 +120,7 @@ export const CampaignCard: React.FC<CampaignCardProps> = ({ campaignAddress }) =
                     imageUrl = getProxiedImageUrl(imageUrl);
                 }
                 
-                console.log(`[CampaignCard] Using description fallback image: ${imageUrl}`);
+                devLog(`[CampaignCard] Using description fallback image: ${imageUrl}`);
                 setCampaignImage(imageUrl);
                 setImageError(false);
             }
@@ -133,7 +134,7 @@ export const CampaignCard: React.FC<CampaignCardProps> = ({ campaignAddress }) =
             
             // Add timeout to prevent infinite loading
             timeoutRef.current = setTimeout(() => {
-                console.log(`[CampaignCard] Image loading timeout for: ${campaignAddress}`);
+                devLog(`[CampaignCard] Image loading timeout for: ${campaignAddress}`);
                 setImageLoading(false);
                 setImageError(true);
                 setImageLoaded(true);
@@ -167,7 +168,7 @@ export const CampaignCard: React.FC<CampaignCardProps> = ({ campaignAddress }) =
         // If it's not already a proxied URL and looks like an external URL, try proxy
         if (!campaignImage.includes('/api/image-proxy') && 
             (campaignImage.includes('amazonaws.com') || campaignImage.includes('http'))) {
-            console.log(`[CampaignCard] Retrying with proxy: ${campaignImage}`);
+            devLog(`[CampaignCard] Retrying with proxy: ${campaignImage}`);
             const proxiedUrl = getProxiedImageUrl(campaignImage);
             setCampaignImage(proxiedUrl);
         } else {
@@ -336,7 +337,6 @@ export const CampaignCard: React.FC<CampaignCardProps> = ({ campaignAddress }) =
                         className="w-full h-32 sm:h-40 lg:h-48 object-cover group-hover:scale-105 transition-transform duration-300 sm:duration-500"
                         onError={handleImageError}
                         onLoad={() => {
-                            console.log(`[CampaignCard] Image loaded successfully: ${campaignImage}`);
                             setImageError(false);
                             setImageLoading(false);
                         }}

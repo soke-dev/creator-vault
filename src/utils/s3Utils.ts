@@ -1,6 +1,7 @@
 /**
  * Utility functions for handling AWS S3 URLs and expired tokens
  */
+import { devLog } from './debugLog';
 
 export function isS3UrlExpired(url: string): boolean {
   try {
@@ -37,13 +38,13 @@ export function isS3UrlExpired(url: string): boolean {
 export function shouldRetryImageLoad(url: string, error: any): boolean {
   // Don't retry if it's an expired S3 URL
   if (isS3UrlExpired(url)) {
-    console.log('S3 URL is expired, not retrying:', url);
+    devLog('S3 URL is expired, not retrying:', url);
     return false;
   }
   
   // Don't retry if it's a 403 (likely expired token)
   if (error?.status === 403) {
-    console.log('403 error likely means expired token, not retrying');
+    devLog('403 error likely means expired token, not retrying');
     return false;
   }
   

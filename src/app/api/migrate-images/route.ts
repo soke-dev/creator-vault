@@ -3,8 +3,6 @@ import { migrateExistingImages } from '@/utils/migrationUtils';
 
 export async function POST(request: NextRequest) {
   try {
-    console.log('[API] Starting image migration process...');
-    
     const result = await migrateExistingImages();
     
     return NextResponse.json({

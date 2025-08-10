@@ -219,7 +219,7 @@ contract Bar {
 
 Contains various assertions.
 
-### `console.log`
+### `devLog`
 
 Usage follows the same format as [Hardhat](https://hardhat.org/hardhat-network/reference/#console-log).
 It's recommended to use `console2.sol` as shown below, as this will show the decoded logs in Forge traces.
@@ -242,7 +242,7 @@ import "forge-std/Test.sol";
 // or directly import it
 import "forge-std/console.sol";
 ...
-console.log(someValue);
+devLog(someValue);
 ```
 
 ## Contributing

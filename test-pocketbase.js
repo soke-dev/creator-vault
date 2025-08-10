@@ -2,7 +2,7 @@
 // Note: This is a Node.js script to test the PocketBase functionality
 
 async function testImageStorage() {
-  console.log('🧪 Testing PocketBase Image Storage...\n');
+  devLog('🧪 Testing PocketBase Image Storage...\n');
   
   // Import PocketBase client
   const PocketBase = require('pocketbase');
@@ -10,9 +10,9 @@ async function testImageStorage() {
   
   // Test connection
   try {
-    console.log('1. Testing PocketBase connection...');
+    devLog('1. Testing PocketBase connection...');
     await pb.health.check();
-    console.log('✅ PocketBase connection successful\n');
+    devLog('✅ PocketBase connection successful\n');
   } catch (error) {
     console.error('❌ PocketBase connection failed:', error.message);
     return;
@@ -28,31 +28,31 @@ async function testImageStorage() {
   const testImageUrl = 'https://via.placeholder.com/400x240/0000FF/FFFFFF?text=Test+Image';
   
   try {
-    console.log('2. Testing image storage with URL...');
-    console.log('Campaign Address:', testData.campaign_address);
-    console.log('Image URL:', testImageUrl);
+    devLog('2. Testing image storage with URL...');
+    devLog('Campaign Address:', testData.campaign_address);
+    devLog('Image URL:', testImageUrl);
     
     const result = await campaignImageService.createWithImageFile(testData, testImageUrl);
-    console.log('✅ Image storage successful!');
-    console.log('Record ID:', result.id);
-    console.log('Has File:', !!result.image_file);
-    console.log('Has URL:', !!result.image_url);
+    devLog('✅ Image storage successful!');
+    devLog('Record ID:', result.id);
+    devLog('Has File:', !!result.image_file);
+    devLog('Has URL:', !!result.image_url);
     
     // Test retrieval
-    console.log('\n3. Testing image retrieval...');
+    devLog('\n3. Testing image retrieval...');
     const retrieved = await campaignImageService.getByCampaignAddress(testData.campaign_address);
     if (retrieved) {
-      console.log('✅ Image retrieval successful!');
-      console.log('Retrieved Record ID:', retrieved.id);
-      console.log('File Available:', !!retrieved.image_file);
-      console.log('URL Available:', !!retrieved.image_url);
+      devLog('✅ Image retrieval successful!');
+      devLog('Retrieved Record ID:', retrieved.id);
+      devLog('File Available:', !!retrieved.image_file);
+      devLog('URL Available:', !!retrieved.image_url);
       
       if (retrieved.image_file) {
         const fileUrl = campaignImageService.getFileUrl(retrieved);
-        console.log('Generated File URL:', fileUrl);
+        devLog('Generated File URL:', fileUrl);
       }
     } else {
-      console.log('❌ No image found for retrieval test');
+      devLog('❌ No image found for retrieval test');
     }
     
   } catch (error) {
@@ -63,7 +63,7 @@ async function testImageStorage() {
 
 // Run the test
 testImageStorage().then(() => {
-  console.log('\n🎯 Test completed!');
+  devLog('\n🎯 Test completed!');
   process.exit(0);
 }).catch(error => {
   console.error('\n💥 Test failed with error:', error);

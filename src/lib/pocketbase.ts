@@ -1,4 +1,5 @@
 import PocketBase from 'pocketbase';
+import { devLog } from '@/utils/debugLog';
 
 // Initialize PocketBase client
 export const pb = new PocketBase('https://fairytale-web.pockethost.io');
@@ -439,8 +440,6 @@ export const campaignVideoService = {
   // Download video from URL and return as File object for collection upload
   async downloadVideoAsFile(videoUrl: string, filename: string): Promise<File | null> {
     try {
-      console.log(`[PocketBase] Downloading video from URL: ${videoUrl}`);
-      
       // Add timeout to prevent hanging on broken URLs
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 second timeout for video files
@@ -460,7 +459,6 @@ export const campaignVideoService = {
       }
       
       const blob = await response.blob();
-      console.log(`[PocketBase] Downloaded video blob size: ${blob.size} bytes, type: ${blob.type}`);
       
       // Create a File object from the blob
       const file = new File([blob], filename, { 
@@ -477,8 +475,6 @@ export const campaignVideoService = {
   // Create a new campaign video record with file upload
   async createWithVideoFile(data: Omit<CampaignVideo, 'id' | 'created' | 'updated'>, videoUrl?: string, thumbnailUrl?: string): Promise<CampaignVideo> {
     try {
-      console.log(`[PocketBase] Creating campaign video record with file upload`);
-      
       // Prepare the form data for creating the record
       const formData = new FormData();
       formData.append('campaign_address', data.campaign_address);
@@ -505,7 +501,6 @@ export const campaignVideoService = {
         
         if (videoFile) {
           formData.append('video_file', videoFile);
-          console.log(`[PocketBase] Attached video file: ${filename}, size: ${videoFile.size} bytes`);
         } else {
           console.warn(`[PocketBase] Failed to download video from URL: ${videoUrl}`);
         }
@@ -518,13 +513,11 @@ export const campaignVideoService = {
         
         if (thumbnailFile) {
           formData.append('video_thumbnail', thumbnailFile);
-          console.log(`[PocketBase] Attached video thumbnail: ${thumbnailFilename}, size: ${thumbnailFile.size} bytes`);
         }
       }
       
       // Create the record with the file upload
       const record = await pb.collection('campaign_videos').create(formData);
-      console.log(`[PocketBase] Created video record with file:`, record);
       
       return record as unknown as CampaignVideo;
     } catch (error) {
@@ -555,8 +548,6 @@ export const campaignVideoService = {
   // Get campaign video by campaign address
   async getByCampaignAddress(campaignAddress: string) {
     try {
-      console.log(`[PocketBase] Fetching video for campaign: ${campaignAddress}`);
-      
       // Add timeout to the request
       const timeoutPromise = new Promise((_, reject) =>
         setTimeout(() => reject(new Error('Request timeout')), 8000)
@@ -565,13 +556,11 @@ export const campaignVideoService = {
       const requestPromise = pb.collection('campaign_videos').getFirstListItem(`campaign_address="${campaignAddress}"`);
       
       const record = await Promise.race([requestPromise, timeoutPromise]) as unknown as CampaignVideo;
-      console.log(`[PocketBase] Found video record:`, record);
       
       // If we have a file stored in PocketBase, prefer that over external URLs
       if (record.video_file) {
         const fileUrl = this.getFileUrl(record);
         if (fileUrl) {
-          console.log(`[PocketBase] Using PocketBase video file URL: ${fileUrl}`);
           record.video_url = fileUrl; // Override with local file URL
         }
       }
@@ -579,7 +568,6 @@ export const campaignVideoService = {
       return record;
     } catch (error: any) {
       if (error.status === 404) {
-        console.log(`[PocketBase] No video found for campaign: ${campaignAddress}`);
         return null; // No video found for this campaign
       }
       if (error.status === 429) {
@@ -680,8 +668,6 @@ export const campaignAudioService = {
   // Download audio from URL and return as File object for collection upload
   async downloadAudioAsFile(audioUrl: string, filename: string): Promise<File | null> {
     try {
-      console.log(`[PocketBase] Downloading audio from URL: ${audioUrl}`);
-      
       // Add timeout to prevent hanging on broken URLs
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout for audio files
@@ -701,7 +687,6 @@ export const campaignAudioService = {
       }
       
       const blob = await response.blob();
-      console.log(`[PocketBase] Downloaded audio blob size: ${blob.size} bytes, type: ${blob.type}`);
       
       // Create a File object from the blob
       const file = new File([blob], filename, { 
@@ -718,7 +703,7 @@ export const campaignAudioService = {
   // Create a new campaign audio record with file upload
   async createWithAudioFile(data: Omit<CampaignAudio, 'id' | 'created' | 'updated'>, audioUrl?: string): Promise<CampaignAudio> {
     try {
-      console.log(`[PocketBase] Creating campaign audio record with file upload`);
+      devLog(`[PocketBase] Creating campaign audio record with file upload`);
       
       // Prepare the form data for creating the record
       const formData = new FormData();
@@ -746,7 +731,7 @@ export const campaignAudioService = {
         
         if (audioFile) {
           formData.append('audio_file', audioFile);
-          console.log(`[PocketBase] Attached audio file: ${filename}, size: ${audioFile.size} bytes`);
+          devLog(`[PocketBase] Attached audio file: ${filename}, size: ${audioFile.size} bytes`);
         } else {
           console.warn(`[PocketBase] Failed to download audio from URL: ${audioUrl}`);
         }
@@ -754,7 +739,7 @@ export const campaignAudioService = {
       
       // Create the record with the file upload
       const record = await pb.collection('campaign_audio').create(formData);
-      console.log(`[PocketBase] Created audio record with file:`, record);
+      devLog(`[PocketBase] Created audio record with file:`, record);
       
       return record as unknown as CampaignAudio;
     } catch (error) {
@@ -776,7 +761,7 @@ export const campaignAudioService = {
   // Get campaign audio by campaign address
   async getByCampaignAddress(campaignAddress: string) {
     try {
-      console.log(`[PocketBase] Fetching audio for campaign: ${campaignAddress}`);
+      devLog(`[PocketBase] Fetching audio for campaign: ${campaignAddress}`);
       
       // Add timeout to the request
       const timeoutPromise = new Promise((_, reject) =>
@@ -786,13 +771,13 @@ export const campaignAudioService = {
       const requestPromise = pb.collection('campaign_audio').getFirstListItem(`campaign_address="${campaignAddress}"`);
       
       const record = await Promise.race([requestPromise, timeoutPromise]) as unknown as CampaignAudio;
-      console.log(`[PocketBase] Found audio record:`, record);
+      devLog(`[PocketBase] Found audio record:`, record);
       
       // If we have a file stored in PocketBase, prefer that over external URLs
       if (record.audio_file) {
         const fileUrl = this.getFileUrl(record);
         if (fileUrl) {
-          console.log(`[PocketBase] Using PocketBase audio file URL: ${fileUrl}`);
+          devLog(`[PocketBase] Using PocketBase audio file URL: ${fileUrl}`);
           record.audio_url = fileUrl; // Override with local file URL
         }
       }
@@ -800,7 +785,7 @@ export const campaignAudioService = {
       return record;
     } catch (error: any) {
       if (error.status === 404) {
-        console.log(`[PocketBase] No audio found for campaign: ${campaignAddress}`);
+        devLog(`[PocketBase] No audio found for campaign: ${campaignAddress}`);
         return null; // No audio found for this campaign
       }
       if (error.status === 429) {
@@ -1010,7 +995,7 @@ export const recentActivitiesService = {
         ...data,
         is_read: data.is_read ?? false
       });
-      console.log('Activity created:', record);
+      devLog('Activity created:', record);
       return record as unknown as RecentActivity;
     } catch (error) {
       console.error('Error creating activity:', error);

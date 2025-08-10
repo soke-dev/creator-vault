@@ -7,6 +7,7 @@ import { client } from "@/app/client";
 import { chain } from "@/app/constants/chains";
 import { CAMPAIGN_NFT_CONTRACT } from "@/app/constants/contracts";
 import { useState } from "react";
+import { devLog } from '@/utils/debugLog';
 
 type Tier = {
     name: string;
@@ -31,26 +32,26 @@ export const TierCard: React.FC<TierCardProps> = ({ tier, index, contract, isEdi
     const [isProcessing, setIsProcessing] = useState(false);
 
     const handleFundingSuccess = async (receipt?: any) => {
-        console.log(`[TierCard] 🔥 FUNCTION CALLED! handleFundingSuccess for campaign: ${campaignAddress}, user: ${account?.address}`);
-        console.log(`[TierCard] 🔥 RECEIPT RECEIVED:`, receipt);
-        console.log(`[TierCard] 🔥 ACCOUNT OBJECT:`, account);
+        devLog(`[TierCard] 🔥 FUNCTION CALLED! handleFundingSuccess for campaign: ${campaignAddress}, user: ${account?.address}`);
+        devLog(`[TierCard] 🔥 RECEIPT RECEIVED:`, receipt);
+        devLog(`[TierCard] 🔥 ACCOUNT OBJECT:`, account);
         
         // Mark this user as having funded this campaign and store tier info
         if (account?.address && campaignAddress) {
-            console.log(`[TierCard] ✅ Starting database operations for account: ${account.address}, campaign: ${campaignAddress}`);
+            devLog(`[TierCard] ✅ Starting database operations for account: ${account.address}, campaign: ${campaignAddress}`);
             try {
                 // Primary storage: Save to PocketBase for reliable online storage
                 const currentAmount = parseInt(tier.amount.toString());
-                console.log(`[TierCard] Calculated amount: ${currentAmount}`);
+                devLog(`[TierCard] Calculated amount: ${currentAmount}`);
                 
                 try {
-                    console.log(`[TierCard] Granting media access for campaign: ${campaignAddress}, supporter: ${account.address}, amount: ${currentAmount}`);
+                    devLog(`[TierCard] Granting media access for campaign: ${campaignAddress}, supporter: ${account.address}, amount: ${currentAmount}`);
                     await campaignSupporterService.grantAudioAccess(
                         campaignAddress,
                         account.address,
                         currentAmount
                     );
-                    console.log(`[TierCard] Media access granted successfully`);
+                    devLog(`[TierCard] Media access granted successfully`);
                 } catch (error) {
                     console.error(`[TierCard] Failed to grant media access:`, error);
                 }
@@ -93,7 +94,7 @@ export const TierCard: React.FC<TierCardProps> = ({ tier, index, contract, isEdi
                     // Create funding record for cross-device supporter tracking
                     // NOTE: We now rely on campaignSupporterService.grantAudioAccess() above 
                     // which automatically creates the supporter record. No need for separate campaign_funding collection.
-                    console.log(`[TierCard] ✅ Supporter record already created via grantAudioAccess`);
+                    devLog(`[TierCard] ✅ Supporter record already created via grantAudioAccess`);
 
                     // Create community support record for global feed
                     await communitySupportService.create({
@@ -145,7 +146,7 @@ export const TierCard: React.FC<TierCardProps> = ({ tier, index, contract, isEdi
 
             // Mint NFT receipt for the supporter
             try {
-                console.log(`[TierCard] Minting NFT receipt for supporter: ${account.address}, campaign: ${campaignAddress}`);
+                devLog(`[TierCard] Minting NFT receipt for supporter: ${account.address}, campaign: ${campaignAddress}`);
                 
                 // Get NFT contract
                 const nftContract = getContract({
@@ -163,7 +164,7 @@ export const TierCard: React.FC<TierCardProps> = ({ tier, index, contract, isEdi
                     );
                     
                     if (existingNFT && existingNFT.mint_status === 'minted') {
-                        console.log(`[TierCard] User already has an NFT for this campaign in database:`, existingNFT);
+                        devLog(`[TierCard] User already has an NFT for this campaign in database:`, existingNFT);
                         
                         // Don't create another record, just proceed with funding
                         // Store receipt info for dashboard display (but don't duplicate database entry)
@@ -178,7 +179,7 @@ export const TierCard: React.FC<TierCardProps> = ({ tier, index, contract, isEdi
                         };
                         localStorage.setItem(mintedKey, JSON.stringify(receiptData));
                         
-                        console.log(`[TierCard] Funding receipt info stored in localStorage`);
+                        devLog(`[TierCard] Funding receipt info stored in localStorage`);
                         return;
                     }
                 } catch (error) {
@@ -206,7 +207,7 @@ export const TierCard: React.FC<TierCardProps> = ({ tier, index, contract, isEdi
                         account: account,
                     });
                     
-                    console.log(`[TierCard] NFT receipt minted successfully! Transaction hash: ${mintResult.transactionHash}`);
+                    devLog(`[TierCard] NFT receipt minted successfully! Transaction hash: ${mintResult.transactionHash}`);
                     
                     // Update NFT record status to 'minted'
                     await campaignNFTService.create({
@@ -237,7 +238,7 @@ export const TierCard: React.FC<TierCardProps> = ({ tier, index, contract, isEdi
                     localStorage.setItem(mintedKey, JSON.stringify(receiptData));
                     
                 } else {
-                    console.log(`[TierCard] User already has an NFT receipt for this campaign on blockchain, skipping mint`);
+                    devLog(`[TierCard] User already has an NFT receipt for this campaign on blockchain, skipping mint`);
                     
                     // Store receipt info for dashboard display but don't create duplicate database entry
                     const mintedKey = `mintedReceipt_${campaignAddress}_${account.address}`;

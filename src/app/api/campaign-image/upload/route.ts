@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { campaignImageService } from '@/lib/pocketbase';
+import { devLog } from '@/utils/debugLog';
 
 export async function POST(request: NextRequest) {
   try {
@@ -17,13 +18,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log(`[API] Processing image upload for campaign: ${campaignAddress}`);
+    devLog(`[API] Processing image upload for campaign: ${campaignAddress}`);
 
     let result;
 
     if (imageUrl) {
       // Download from URL and store as file (primary method for new campaigns)
-      console.log(`[API] Processing URL download and storage: ${imageUrl}`);
+      devLog(`[API] Processing URL download and storage: ${imageUrl}`);
       result = await campaignImageService.createWithImageFile({
         campaign_address: campaignAddress,
         creator_address: creatorAddress
@@ -35,7 +36,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log(`[API] Successfully stored image for campaign: ${campaignAddress}`);
+    devLog(`[API] Successfully stored image for campaign: ${campaignAddress}`);
 
     return NextResponse.json({
       success: true,
