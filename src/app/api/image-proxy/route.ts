@@ -17,8 +17,6 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const imageUrl = searchParams.get('url');
 
-    console.log(`[Image Proxy] Request received for URL: ${imageUrl}`);
-
     if (!imageUrl) {
       return NextResponse.json(
         { error: 'Image URL is required' },
@@ -46,8 +44,6 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    console.log(`[Image Proxy] Fetching image: ${imageUrl}`);
-
     // Fetch the image with timeout and proper headers
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
@@ -66,11 +62,8 @@ export async function GET(request: NextRequest) {
     clearTimeout(timeoutId);
 
     if (!response.ok) {
-      console.error(`[Image Proxy] Failed to fetch image: ${response.status} ${response.statusText}`);
-      
       // Try to get more error details
       const errorText = await response.text().catch(() => 'Unknown error');
-      console.error(`[Image Proxy] Error details: ${errorText}`);
       
       return NextResponse.json(
         { 
@@ -88,11 +81,9 @@ export async function GET(request: NextRequest) {
 
     // Check if response is actually an image
     const contentType = response.headers.get('content-type') || '';
-    console.log(`[Image Proxy] Content-Type: ${contentType}`);
     
     // Be more lenient with content type checking
     if (!contentType.startsWith('image/') && !contentType.includes('octet-stream')) {
-      console.error(`[Image Proxy] Not an image: ${contentType}`);
       return NextResponse.json(
         { error: 'URL does not point to a valid image', contentType },
         { 
@@ -105,7 +96,6 @@ export async function GET(request: NextRequest) {
     }
 
     const imageBuffer = await response.arrayBuffer();
-    console.log(`[Image Proxy] Successfully fetched image, size: ${imageBuffer.byteLength} bytes`);
 
     return new NextResponse(imageBuffer, {
       status: 200,
@@ -119,7 +109,6 @@ export async function GET(request: NextRequest) {
     });
 
   } catch (error: any) {
-    console.error('[Image Proxy] Error:', error);
     
     if (error.name === 'AbortError') {
       return NextResponse.json(

@@ -1,8 +1,25 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   // fixes wallet connect dependency issue https://docs.walletconnect.com/web3modal/nextjs/about#extra-configuration
-  webpack: (config) => {
+  webpack: (config, { dev }) => {
     config.externals.push("pino-pretty", "lokijs", "encoding");
+    
+    // Remove console statements in production builds
+    if (!dev) {
+      config.optimization.minimizer.forEach((minimizer) => {
+        if (minimizer.constructor.name === 'TerserPlugin') {
+          minimizer.options.terserOptions = {
+            ...minimizer.options.terserOptions,
+            compress: {
+              ...minimizer.options.terserOptions?.compress,
+              drop_console: true,
+              drop_debugger: true,
+            },
+          };
+        }
+      });
+    }
+    
     return config;
   },
 
