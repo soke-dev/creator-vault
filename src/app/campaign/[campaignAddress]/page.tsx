@@ -4,7 +4,6 @@ import { TierCard } from "@/components/TierCard";
 import { useParams } from "next/navigation";
 import { FaExternalLinkAlt, FaHandHoldingUsd, FaUsers, FaEnvelope } from 'react-icons/fa';
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { devLog } from '@/utils/debugLog';
 import {
   getContract,
   prepareContractCall,
@@ -461,7 +460,7 @@ export default function CampaignPage() {
         additional_notes: ''
       });
       
-      devLog('✅ Contact info successfully stored in database');
+      console.log('✅ Contact info successfully stored in database');
       
       setHasSubmittedContact(true);
       setShowContactForm(false);
@@ -513,7 +512,7 @@ export default function CampaignPage() {
           );
           
           if (existingNFT && existingNFT.mint_status === 'minted') {
-            devLog("✅ Found minted NFT in database:", existingNFT);
+            console.log("✅ Found minted NFT in database:", existingNFT);
             // Extract image from metadata or use campaign image
             try {
               const metadata = JSON.parse(existingNFT.nft_metadata || '{}');
@@ -536,7 +535,7 @@ export default function CampaignPage() {
         const mintedKey = `mintedNFT_${campaignAddress}_${account.address}`;
         const mintedUrl = localStorage.getItem(mintedKey);
         if (mintedUrl) {
-          devLog("⚠️ Found legacy mint in localStorage, consider migrating to database");
+          console.log("⚠️ Found legacy mint in localStorage, consider migrating to database");
           setMintedImageUrl(mintedUrl);
         }
       }
@@ -589,7 +588,7 @@ export default function CampaignPage() {
       };
 
       // Upload metadata to IPFS or use the image URL directly
-      devLog("Creating NFT with metadata:", metadata);
+      console.log("Creating NFT with metadata:", metadata);
       
       // For simplicity, we'll use the thirdweb NFT drop or create a simple storage
       // In this case, we'll mint using thirdweb's built-in NFT functionality
@@ -654,7 +653,7 @@ export default function CampaignPage() {
           mint_status: 'minted'
         });
         
-        devLog("✅ NFT record successfully created in database:", nftRecord);
+        console.log("✅ NFT record successfully created in database:", nftRecord);
         
         // Set the minted image URL from the stored metadata
         setMintedImageUrl(campaignImage);
@@ -675,7 +674,7 @@ export default function CampaignPage() {
       }
       
       // Success - no popup notification needed, visual feedback is handled by UI state changes
-      devLog(`✅ NFT minted successfully! Token ID: ${simulatedTokenId}, Database ID: ${nftRecord.id}`);
+      console.log(`✅ NFT minted successfully! Token ID: ${simulatedTokenId}, Database ID: ${nftRecord.id}`);
       
     } catch (err: any) {
       console.error('Minting error:', err);
@@ -736,7 +735,7 @@ export default function CampaignPage() {
       alert(`Successfully claimed ${totalBalance} USDT! Transaction hash: ${result.transactionHash}`);
       
       // In our simplified version, NFT minting is available for supporters
-      devLog("Campaign successfully funded and claimed - NFT minting available for supporters!");
+      console.log("Campaign successfully funded and claimed - NFT minting available for supporters!");
       
     } catch (error) {
       console.error("Error claiming funds:", error);
@@ -749,7 +748,7 @@ export default function CampaignPage() {
   // Function to enable NFT minting for this campaign (Admin only) - SIMPLIFIED VERSION
   const enableNFTMinting = async () => {
     // In our simplified version, NFT minting is always enabled for campaigns with images
-    devLog("Simplified NFT minting - always enabled when campaign has image");
+    console.log("Simplified NFT minting - always enabled when campaign has image");
     setIsNFTMintingEnabled(!!campaignImage);
   };
 
@@ -906,7 +905,7 @@ export default function CampaignPage() {
                                         objectPosition: 'center center',
                                         boxShadow: '0 10px 25px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.1)'
                                     }}
-                                    onLoad={() => devLog(`[Campaign] Image loaded successfully: ${campaignImage}`)}
+                                    onLoad={() => console.log(`[Campaign] Image loaded successfully: ${campaignImage}`)}
                                     onError={(e) => {
                                         console.error(`[Campaign] Image failed to load: ${campaignImage}`);
                                         // Set to a fallback or retry
@@ -2078,19 +2077,19 @@ const RecentDonations = ({
         // Load recent donations from PocketBase database
         const loadDonations = async () => {
             try {
-                devLog(`[RecentDonations] Loading donations for campaign: ${campaignAddress}`);
-                devLog(`[RecentDonations] Current user address: ${currentUserAddress}`);
+                console.log(`[RecentDonations] Loading donations for campaign: ${campaignAddress}`);
+                console.log(`[RecentDonations] Current user address: ${currentUserAddress}`);
                 
                 // Debug: Show what we're querying for
-                devLog(`[RecentDonations] Searching for supporters with campaign_address: "${campaignAddress}"`);
+                console.log(`[RecentDonations] Searching for supporters with campaign_address: "${campaignAddress}"`);
                 
                 // Fetch supporter data from PocketBase campaign_supporters collection
                 const supporterRecords = await campaignSupporterService.getByCampaign(campaignAddress as string);
-                devLog(`[RecentDonations] Found ${supporterRecords.length} supporter records from database:`, supporterRecords);
+                console.log(`[RecentDonations] Found ${supporterRecords.length} supporter records from database:`, supporterRecords);
 
                 // Debug: Show details of each supporter record
                 supporterRecords.forEach((record, index) => {
-                    devLog(`[RecentDonations] Supporter ${index + 1}:`, {
+                    console.log(`[RecentDonations] Supporter ${index + 1}:`, {
                         supporter_address: record.supporter_address,
                         campaign_address: record.campaign_address,
                         amount_funded: record.amount_funded,
@@ -2100,9 +2099,9 @@ const RecentDonations = ({
                 });
 
                 // Debug: Log the total number of supporter records found
-                devLog(`[RecentDonations] Found ${supporterRecords.length} supporters for campaign ${campaignAddress}`);
+                console.log(`[RecentDonations] Found ${supporterRecords.length} supporters for campaign ${campaignAddress}`);
                 if (supporterRecords.length === 0) {
-                    devLog(`[RecentDonations] No supporters found for campaign ${campaignAddress} in database`);
+                    console.log(`[RecentDonations] No supporters found for campaign ${campaignAddress} in database`);
                 }
 
                 const allDonations = supporterRecords.map((record: any) => ({
@@ -2122,7 +2121,7 @@ const RecentDonations = ({
                     (donation: any) => donation.walletAddress === currentUserAddress
                 );
 
-                devLog(`[RecentDonations] Processed ${allDonations.length} donations, ${userDonationsList.length} from current user`);
+                console.log(`[RecentDonations] Processed ${allDonations.length} donations, ${userDonationsList.length} from current user`);
                 setDonations(allDonations.slice(0, 5)); // Show last 5 donations
                 setUserDonations(userDonationsList);
             } catch (error) {

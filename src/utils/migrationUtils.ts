@@ -1,5 +1,4 @@
 import { campaignImageService, pb } from '../lib/pocketbase';
-import { devLog } from './debugLog';
 
 /**
  * Migration utility to convert existing image URL records to file-based storage

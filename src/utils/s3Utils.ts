@@ -1,7 +1,6 @@
 /**
  * Utility functions for handling AWS S3 URLs and expired tokens
  */
-import { devLog } from './debugLog';
 
 export function isS3UrlExpired(url: string): boolean {
   try {

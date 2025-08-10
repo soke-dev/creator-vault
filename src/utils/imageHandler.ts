@@ -1,5 +1,4 @@
 // Image handling utilities for campaign images including PocketBase file URLs
-import { devLog } from './debugLog';
 
 export const getProxiedImageUrl = (originalUrl: string): string => {
   if (!originalUrl) return '';

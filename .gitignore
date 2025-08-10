@@ -48,3 +48,24 @@ localStorage_analysis.md
 
 # Local Netlify folder
 .netlify
+
+# Test files and browser testing
+browser-test.js
+test-pocketbase.js
+
+# IDE/Editor files
+.vscode/
+*.swp
+*.swo
+
+# OS files
+Thumbs.db
+.DS_Store
+
+# Package manager files
+yarn.lock
+package-lock.json
+
+# Cache files
+.eslintcache
+.stylelintcache
